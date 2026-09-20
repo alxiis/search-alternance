@@ -2,6 +2,7 @@ import { AlertTriangle, FileUp } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useStore } from '../hooks/useStore'
 import { useToast } from '../hooks/useToast'
+import { TONE_BADGE } from '../data/tones'
 import { buildImportPlan, type ImportItem } from '../services/claudeImport'
 import { parseClaudeText, type ParsedPayload } from '../services/claudeParser'
 import { DUPLICATE_REASON_LABEL } from '../utils/dedupe'
@@ -15,7 +16,7 @@ interface Props {
 }
 
 function Badge({ tone, children }: { tone: 'new' | 'dup' | 'target'; children: string }) {
-  const cls = { new: 'bg-emerald-100 text-emerald-800', dup: 'bg-amber-100 text-amber-800', target: 'bg-indigo-100 text-indigo-800' }[tone]
+  const cls = { new: TONE_BADGE.emerald, dup: TONE_BADGE.amber, target: TONE_BADGE.indigo }[tone]
   return <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', cls)}>{children}</span>
 }
 
@@ -41,7 +42,7 @@ function ItemRow({ item, checked, onToggle }: { item: ImportItem; checked: boole
       <Badge tone="new">Nouvelle</Badge>
     )
     extras = (
-      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         {item.raw.analysis && <ScoreBadge score={item.raw.analysis.compatibilityScore} />}
         {item.raw.analysis && <span>analyse</span>}
         {item.raw.coverLetters && <span>· lettre(s)</span>}
@@ -52,13 +53,13 @@ function ItemRow({ item, checked, onToggle }: { item: ImportItem; checked: boole
 
   return (
     <li className="flex items-start gap-3 py-3">
-      <input type="checkbox" className="mt-1 h-4 w-4 rounded border-slate-300 accent-indigo-600" checked={checked} onChange={onToggle} aria-label={`Importer ${title}`} />
+      <input type="checkbox" className="mt-1 h-4 w-4 rounded border-input accent-[var(--primary)]" checked={checked} onChange={onToggle} aria-label={`Importer ${title}`} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="truncate text-sm font-medium text-slate-900">{title}</span>
+          <span className="truncate text-sm font-medium text-foreground">{title}</span>
           {badge}
         </div>
-        <p className="truncate text-xs text-slate-500">{subtitle}</p>
+        <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
         {extras}
       </div>
     </li>
@@ -141,7 +142,7 @@ export function ImportJsonModal({ targetJobId, onClose }: Props) {
       }
     >
       {targetJob && (
-        <p className="mb-3 rounded-lg bg-indigo-50 p-3 text-sm text-indigo-900">
+        <p className="mb-3 rounded-lg bg-accent p-3 text-sm text-accent-foreground">
           L'analyse sera rattachée à l'offre : <strong>{targetJob.title || targetJob.url}</strong>.
         </p>
       )}
@@ -173,7 +174,7 @@ export function ImportJsonModal({ targetJobId, onClose }: Props) {
       </div>
 
       {error && (
-        <div role="alert" className="mt-4 flex gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+        <div role="alert" className="mt-4 flex gap-2 rounded-lg border border-danger/30 bg-danger-soft p-3 text-sm text-danger-soft-foreground">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <p>{error}</p>
         </div>
@@ -181,14 +182,14 @@ export function ImportJsonModal({ targetJobId, onClose }: Props) {
 
       {payload && (
         <div className="mt-5">
-          <h3 className="text-sm font-semibold text-slate-900">Aperçu avant import</h3>
-          <p className="text-xs text-slate-500">Décochez ce que vous ne voulez pas importer. Les doublons complètent l'existant sans écraser vos statuts ni vos notes.</p>
+          <h3 className="text-sm font-semibold text-foreground">Aperçu avant import</h3>
+          <p className="text-xs text-muted-foreground">Décochez ce que vous ne voulez pas importer. Les doublons complètent l'existant sans écraser vos statuts ni vos notes.</p>
           {payload.warnings.length > 0 && (
-            <ul className="mt-3 list-disc space-y-0.5 rounded-lg bg-amber-50 p-3 pl-7 text-xs text-amber-800">
+            <ul className="mt-3 list-disc space-y-0.5 rounded-lg bg-warning-soft p-3 pl-7 text-xs text-warning-soft-foreground">
               {payload.warnings.map((w) => <li key={w}>{w}</li>)}
             </ul>
           )}
-          <ul className="mt-2 divide-y divide-slate-100">
+          <ul className="mt-2 divide-y divide-border">
             {items.map((item) => (
               <ItemRow key={item.key} item={item} checked={selected[item.key] ?? true} onToggle={() => setSelected((s) => ({ ...s, [item.key]: !(s[item.key] ?? true) }))} />
             ))}

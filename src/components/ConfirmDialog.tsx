@@ -22,7 +22,7 @@ export function ConfirmDialog({ title, message, confirmLabel = 'Confirmer', dang
         </>
       }
     >
-      <p className="text-sm text-slate-600">{message}</p>
+      <p className="text-sm text-muted-foreground">{message}</p>
     </Modal>
   )
 }

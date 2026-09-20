@@ -16,14 +16,14 @@ export function JobCard({ job, companyName }: Props) {
     <article className="card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-slate-500">{companyName || 'Entreprise inconnue'}</p>
-          <button className="text-left text-sm font-semibold text-brand-700 hover:underline" onClick={() => openJob(job.id)}>
+          <p className="truncate text-xs font-medium text-muted-foreground">{companyName || 'Entreprise inconnue'}</p>
+          <button className="text-left text-sm font-semibold text-accent-foreground hover:underline" onClick={() => openJob(job.id)}>
             {job.title || 'Offre sans titre'}
           </button>
         </div>
         <ScoreBadge score={job.compatibilityScore} />
       </div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         {job.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden />{job.location}</span>}
         <span>Ajoutée le {formatShortDate(job.discoveredAt)}</span>
         {job.application.followUpDate && <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" aria-hidden />Relance {formatShortDate(job.application.followUpDate)}</span>}

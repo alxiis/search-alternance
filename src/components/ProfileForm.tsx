@@ -9,7 +9,7 @@ import { NumberField, SelectField, TagInput, TextArea, TextField } from './field
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="card p-5">
-      <h2 className="mb-4 font-semibold text-slate-900">{title}</h2>
+      <h2 className="mb-4 font-semibold text-foreground">{title}</h2>
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
     </section>
   )

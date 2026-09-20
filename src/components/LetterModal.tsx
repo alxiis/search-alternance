@@ -33,7 +33,7 @@ export function LetterModal({ jobId, onClose, onImport }: Props) {
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {(Object.keys(LETTER_FORMATS) as LetterFormat[]).map((f) => (
             <label key={f} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-indigo-600" checked={formats.includes(f)} onChange={() => toggle(f)} />
+              <input type="checkbox" className="h-4 w-4 rounded border-input accent-[var(--primary)]" checked={formats.includes(f)} onChange={() => toggle(f)} />
               {LETTER_FORMATS[f].label}
             </label>
           ))}
@@ -43,7 +43,7 @@ export function LetterModal({ jobId, onClose, onImport }: Props) {
         <TextArea label="Consignes supplémentaires (facultatif)" rows={2} value={extra} onChange={setExtra} placeholder="Ex. : insister sur mon projet de fin d'année, ton plus direct…" />
       </div>
       {!job.analysis && (
-        <p className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+        <p className="mb-4 rounded-lg border border-warning/30 bg-warning-soft p-3 text-sm text-warning-soft-foreground">
           Cette offre n'a pas encore été analysée : la lettre s'appuiera uniquement sur votre profil et sur l'offre. Une analyse préalable donne de meilleurs résultats.
         </p>
       )}

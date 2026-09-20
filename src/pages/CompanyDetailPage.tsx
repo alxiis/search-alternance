@@ -28,7 +28,7 @@ function CompanyForm({ company }: { company: Company }) {
   return (
     <section className="card p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-semibold text-slate-900">Informations</h2>
+        <h2 className="font-semibold text-foreground">Informations</h2>
         <SaveIndicator state={state} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -41,7 +41,7 @@ function CompanyForm({ company }: { company: Company }) {
         <div className="sm:col-span-2"><TextArea label="Notes" rows={3} value={c.notes} onChange={(v) => set('notes', v)} /></div>
       </div>
 
-      <h3 className="mb-2 mt-6 text-sm font-semibold text-slate-800">URLs utiles</h3>
+      <h3 className="mb-2 mt-6 text-sm font-semibold text-foreground">URLs utiles</h3>
       <div className="space-y-2">
         {c.usefulUrls.map((u, i) => (
           <div key={i} className="flex gap-2">
@@ -57,15 +57,15 @@ function CompanyForm({ company }: { company: Company }) {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {c.compatibilityReasons.length > 0 && (
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-800">Pourquoi cette entreprise (Claude)</h3>
-              <ul className="list-disc space-y-0.5 pl-5 text-sm text-slate-600">{c.compatibilityReasons.map((r) => <li key={r}>{r}</li>)}</ul>
+              <h3 className="mb-1 text-sm font-semibold text-foreground">Pourquoi cette entreprise (Claude)</h3>
+              <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">{c.compatibilityReasons.map((r) => <li key={r}>{r}</li>)}</ul>
             </div>
           )}
           {c.sources.length > 0 && (
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-800">Sources</h3>
+              <h3 className="mb-1 text-sm font-semibold text-foreground">Sources</h3>
               <ul className="space-y-0.5 text-xs">
-                {c.sources.map((s) => <li key={s} className="truncate">{/^https?:\/\//.test(s) ? <a href={s} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">{s}</a> : s}</li>)}
+                {c.sources.map((s) => <li key={s} className="truncate">{/^https?:\/\//.test(s) ? <a href={s} target="_blank" rel="noopener noreferrer" className="text-accent-foreground hover:underline">{s}</a> : s}</li>)}
               </ul>
             </div>
           )}
@@ -103,24 +103,24 @@ export function CompanyDetailPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <Link to="/entreprises" className="btn-ghost -ml-2"><ArrowLeft className="h-4 w-4" aria-hidden /> Entreprises</Link>
-        <h2 className="text-xl font-semibold text-slate-900">{company.name}</h2>
-        <span className="text-sm text-slate-500">Dernière recherche : {formatDate(company.lastSearchAt)}</span>
+        <h2 className="text-xl font-semibold text-foreground">{company.name}</h2>
+        <span className="text-sm text-muted-foreground">Dernière recherche : {formatDate(company.lastSearchAt)}</span>
         <div className="ml-auto flex gap-2">
           <button className="btn-primary" onClick={() => searchCompanyJobs(company.id)}><Search className="h-4 w-4" aria-hidden /> Rechercher de nouvelles offres chez cette entreprise</button>
-          <button className="btn-ghost text-rose-600 hover:bg-rose-50" onClick={() => setConfirmDelete(true)} aria-label="Supprimer l'entreprise"><Trash2 className="h-4 w-4" /></button>
+          <button className="btn-ghost text-danger hover:bg-danger-soft" onClick={() => setConfirmDelete(true)} aria-label="Supprimer l'entreprise"><Trash2 className="h-4 w-4" /></button>
         </div>
       </div>
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Statistiques de l'entreprise">
         <StatCard label="Offres" value={jobs.length} icon={Briefcase} />
-        <StatCard label="Offres ouvertes" value={open.length} icon={CalendarCheck} tone="bg-sky-100 text-sky-700" />
-        <StatCard label="Candidatures envoyées" value={sent.length} icon={Send} tone="bg-violet-100 text-violet-700" />
-        <StatCard label="Entretiens" value={interviews.length} icon={MessagesSquare} tone="bg-teal-100 text-teal-700" />
+        <StatCard label="Offres ouvertes" value={open.length} icon={CalendarCheck} tone="sky" />
+        <StatCard label="Candidatures envoyées" value={sent.length} icon={Send} tone="violet" />
+        <StatCard label="Entretiens" value={interviews.length} icon={MessagesSquare} tone="teal" />
       </section>
 
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Offres ({jobs.length})</h2>
+          <h2 className="font-semibold text-foreground">Offres ({jobs.length})</h2>
           <button className="btn-secondary btn-sm" onClick={() => openAddJob()}><Plus className="h-3.5 w-3.5" aria-hidden /> Ajouter une offre</button>
         </div>
         {jobs.length === 0 ? (

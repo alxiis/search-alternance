@@ -21,10 +21,10 @@ function ToolCard({ icon: Icon, title, description, children, action, disabled, 
   return (
     <section className="card flex flex-col p-5">
       <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-brand-50 p-2 text-brand-600"><Icon className="h-5 w-5" aria-hidden /></div>
+        <div className="rounded-lg bg-accent p-2 text-accent-foreground"><Icon className="h-5 w-5" aria-hidden /></div>
         <div>
-          <h2 className="font-semibold text-slate-900">{title}</h2>
-          <p className="mt-0.5 text-sm text-slate-500">{description}</p>
+          <h2 className="font-semibold text-foreground">{title}</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
       {children && <div className="mt-4">{children}</div>}
@@ -63,7 +63,7 @@ export function SearchPage() {
               {criteria.map((c) => <option key={c.id} value={c.id}>{c.name || 'Sans nom'}</option>)}
             </select>
           ) : (
-            <p className="text-sm text-slate-600">Aucun critère défini. <Link to="/criteres" className="font-medium text-brand-700 hover:underline">Créer un profil de recherche</Link></p>
+            <p className="text-sm text-muted-foreground">Aucun critère défini. <Link to="/criteres" className="font-medium text-accent-foreground hover:underline">Créer un profil de recherche</Link></p>
           )}
         </div>
         <div className="min-w-[16rem] flex-1">
@@ -74,7 +74,7 @@ export function SearchPage() {
       </section>
 
       {profileEmpty && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="note">
+        <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning-soft p-3 text-sm text-warning-soft-foreground" role="note">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <p>Votre profil est vide : les prompts seront peu utiles. <Link to="/profil" className="font-medium underline">Complétez-le d'abord.</Link></p>
         </div>

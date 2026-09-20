@@ -53,8 +53,8 @@ export function PromptPanel({ text, onImport }: Props) {
           </button>
         )}
       </div>
-      <div className="flex items-start gap-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+      <div className="flex items-start gap-2 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />
         <p>
           {current.length.toLocaleString('fr-FR')} caractères. Ce texte contient vos informations personnelles : il n'est envoyé nulle part tant que vous ne le collez pas vous-même dans Claude.
           {cv ? ' Pensez aussi à joindre votre CV dans la conversation.' : ''}

@@ -27,9 +27,9 @@ const COLUMNS: Array<{ key: SortKey; label: string }> = [
 ]
 
 export function FollowUpLabel({ date }: { date: string | null }) {
-  if (!date) return <span className="text-slate-400">—</span>
+  if (!date) return <span className="text-muted-foreground">—</span>
   const late = date <= today()
-  return <span className={cn('whitespace-nowrap', late && 'font-semibold text-rose-600')}>{formatShortDate(date)}{late ? ' ⚠' : ''}</span>
+  return <span className={cn('whitespace-nowrap', late && 'font-semibold text-danger')}>{formatShortDate(date)}{late ? ' ⚠' : ''}</span>
 }
 
 export function JobTable({ jobs, companies, sortKey, sortDir, onSort }: Props) {
@@ -38,7 +38,7 @@ export function JobTable({ jobs, companies, sortKey, sortDir, onSort }: Props) {
 
   const sortable = (key: SortKey, label: string) => (
     <th key={key} scope="col" aria-sort={sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'} className="px-3 py-2.5 text-left font-medium">
-      <button className="inline-flex items-center gap-1 whitespace-nowrap hover:text-slate-900" onClick={() => onSort(key)}>
+      <button className="inline-flex items-center gap-1 whitespace-nowrap hover:text-foreground" onClick={() => onSort(key)}>
         {label}
         {sortKey === key && (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" aria-hidden /> : <ArrowDown className="h-3 w-3" aria-hidden />)}
       </button>
@@ -48,7 +48,7 @@ export function JobTable({ jobs, companies, sortKey, sortDir, onSort }: Props) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[1200px] text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <thead className="border-b border-border bg-muted/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           <tr>
             {COLUMNS.map((c) => sortable(c.key, c.label))}
             <th scope="col" className="px-3 py-2.5 text-left font-medium">Lien</th>
@@ -58,31 +58,31 @@ export function JobTable({ jobs, companies, sortKey, sortDir, onSort }: Props) {
             <th scope="col" className="px-3 py-2.5"><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-border">
           {jobs.map((j) => (
-            <tr key={j.id} className="hover:bg-slate-50/70">
-              <td className="px-3 py-2.5 font-medium text-slate-900">{names.get(j.companyId ?? '') ?? <span className="text-slate-400">—</span>}</td>
+            <tr key={j.id} className="transition-colors hover:bg-muted/50">
+              <td className="px-3 py-2.5 font-medium text-foreground">{names.get(j.companyId ?? '') ?? <span className="text-muted-foreground">—</span>}</td>
               <td className="max-w-[260px] px-3 py-2.5">
-                <button className="text-left font-medium text-brand-700 hover:underline" onClick={() => openJob(j.id)}>
+                <button className="text-left font-medium text-accent-foreground hover:underline" onClick={() => openJob(j.id)}>
                   {j.title || 'Offre sans titre'}
                 </button>
               </td>
-              <td className="px-3 py-2.5 text-slate-600">{j.location || '—'}</td>
-              <td className="px-3 py-2.5 text-slate-600">{j.contractType || '—'}</td>
-              <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{formatShortDate(j.discoveredAt)}</td>
-              <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{formatShortDate(j.publishedAt)}</td>
+              <td className="px-3 py-2.5 text-muted-foreground">{j.location || '—'}</td>
+              <td className="px-3 py-2.5 text-muted-foreground">{j.contractType || '—'}</td>
+              <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">{formatShortDate(j.discoveredAt)}</td>
+              <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">{formatShortDate(j.publishedAt)}</td>
               <td className="px-3 py-2.5"><ScoreBadge score={j.compatibilityScore} /></td>
               <td className="px-3 py-2.5"><StatusSelect job={j} /></td>
               <td className="px-3 py-2.5">
                 {j.url ? (
-                  <a href={j.url} target="_blank" rel="noopener noreferrer" className="inline-flex text-slate-500 hover:text-brand-600" aria-label={`Ouvrir l'offre ${j.title}`}>
+                  <a href={j.url} target="_blank" rel="noopener noreferrer" className="inline-flex text-muted-foreground hover:text-accent-foreground" aria-label={`Ouvrir l'offre ${j.title}`}>
                     <ExternalLink className="h-4 w-4" />
                   </a>
                 ) : '—'}
               </td>
-              <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{formatShortDate(j.lastActionAt)}</td>
+              <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">{formatShortDate(j.lastActionAt)}</td>
               <td className="px-3 py-2.5"><FollowUpLabel date={j.application.followUpDate} /></td>
-              <td className="max-w-[200px] truncate px-3 py-2.5 text-slate-500" title={j.notes}>{j.notes || '—'}</td>
+              <td className="max-w-[200px] truncate px-3 py-2.5 text-muted-foreground" title={j.notes}>{j.notes || '—'}</td>
               <td className="px-3 py-2.5 text-right">
                 <button className="btn-secondary btn-sm" onClick={() => analyzeJob(j.id)} title="Générer le prompt d'analyse">
                   <Sparkles className="h-3.5 w-3.5" aria-hidden /> Analyser
