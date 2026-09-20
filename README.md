@@ -49,6 +49,14 @@ Le site est marqué `noindex`. Attention : une page GitHub Pages est **publique*
 
 Le score de compatibilité est **toujours fourni par Claude** puis importé ; l'application ne le calcule pas. Sans analyse, l'offre affiche « Non analysé ».
 
+## Thème Jour / Nuit
+
+- Bouton soleil / lune dans l'en-tête ; réglage à trois états (Jour, Nuit, Système) dans *Données → Apparence*.
+- Sans choix enregistré, le thème de l'appareil est suivi (y compris en direct si l'appareil change). Un choix manuel est mémorisé dans `localStorage` (clé `suivi-alternance:theme`).
+- Un petit script dans `index.html` applique le thème avant le premier rendu : pas de clignotement.
+- Les couleurs passent par des variables CSS sémantiques (`--background`, `--foreground`, `--card`, `--muted`, `--border`, `--primary`, `--accent`, `--danger`, `--success`, `--warning`…) définies dans `src/index.css` pour `:root` et `:root.dark`, puis exposées à Tailwind (`bg-card`, `text-muted-foreground`, `border-border`…). Les teintes de badges (statuts, scores) sont dans `src/data/tones.ts`.
+- Les animations (changement de thème, ouverture des modales) sont désactivées si le système demande `prefers-reduced-motion`.
+
 ## Stockage local et confidentialité
 
 - Base IndexedDB `suivi-alternance` (stores : `profile`, `criteria`, `companies`, `jobs`, `files`, `settings`). Migrations versionnées dans `src/lib/db.ts`.
@@ -153,4 +161,3 @@ src/
 
 - Pas de lecture automatique des offres ni du PDF (choix volontaire : aucun scraping, aucun envoi).
 - Les données sont liées à un navigateur : passez par l'export/import JSON pour changer d'appareil.
-- Le mode sombre n'est pas implémenté (les couleurs passent par des jetons Tailwind, il pourra être ajouté).

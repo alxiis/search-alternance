@@ -18,7 +18,7 @@ export default function App() {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-slate-500" role="status">
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground" role="status">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden /> Chargement de vos données locales…
       </div>
     )
@@ -27,7 +27,7 @@ export default function App() {
   return (
     <UiProvider>
       {loadError && (
-        <div role="alert" className="flex items-start gap-2 bg-rose-600 px-4 py-2 text-sm text-white">
+        <div role="alert" className="flex items-start gap-2 bg-danger-solid px-4 py-2 text-sm text-white">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           Stockage local indisponible : {loadError}. Vos modifications ne seront pas conservées (navigation privée ?).
         </div>

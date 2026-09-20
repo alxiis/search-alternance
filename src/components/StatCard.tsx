@@ -1,30 +1,31 @@
 import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { TONE_BADGE, type Tone } from '../data/tones'
 import { cn } from '../utils/text'
 
 interface Props {
   label: string
   value: number
   icon: LucideIcon
-  tone?: string
+  tone?: Tone
   to?: string
 }
 
-export function StatCard({ label, value, icon: Icon, tone = 'bg-slate-100 text-slate-600', to }: Props) {
+export function StatCard({ label, value, icon: Icon, tone = 'neutral', to }: Props) {
   const body = (
     <>
-      <div className={cn('rounded-lg p-2.5', tone)}>
-        <Icon className="h-5 w-5" aria-hidden />
+      <div className="min-w-0">
+        <p className="text-sm leading-snug text-muted-foreground">{label}</p>
+        <p className="mt-1.5 text-3xl font-semibold tabular-nums tracking-tight text-foreground">{value}</p>
       </div>
-      <div>
-        <p className="text-2xl font-semibold tabular-nums text-slate-900">{value}</p>
-        <p className="text-sm text-slate-500">{label}</p>
+      <div className={cn('shrink-0 rounded-lg p-2', TONE_BADGE[tone])}>
+        <Icon className="h-[18px] w-[18px]" aria-hidden />
       </div>
     </>
   )
-  const cls = 'card flex items-center gap-4 p-4'
+  const cls = 'card flex items-start justify-between gap-3 p-4'
   return to ? (
-    <Link to={to} className={cn(cls, 'transition-shadow hover:shadow-md')}>{body}</Link>
+    <Link to={to} className={cn(cls, 'transition-colors duration-150 hover:border-input hover:bg-muted/40')}>{body}</Link>
   ) : (
     <div className={cls}>{body}</div>
   )

@@ -5,20 +5,21 @@ import { unique } from '../utils/text'
 interface FieldProps {
   label: string
   hint?: string
+  error?: string | null
   required?: boolean
   children: (id: string) => ReactNode
 }
 
-export function Field({ label, hint, required, children }: FieldProps) {
+export function Field({ label, hint, error, required, children }: FieldProps) {
   const id = useId()
   return (
     <div>
       <label htmlFor={id} className="label">
         {label}
-        {required && <span className="ml-0.5 text-rose-600" aria-hidden>*</span>}
+        {required && <span className="ml-0.5 text-danger" aria-hidden>*</span>}
       </label>
       {children(id)}
-      {hint && <p className="hint">{hint}</p>}
+      {error ? <p id={`${id}-error`} role="alert" className="field-error">{error}</p> : hint && <p className="hint">{hint}</p>}
     </div>
   )
 }
@@ -28,6 +29,7 @@ interface TextFieldProps {
   value: string
   onChange: (v: string) => void
   hint?: string
+  error?: string | null
   required?: boolean
   type?: string
   placeholder?: string
@@ -35,11 +37,11 @@ interface TextFieldProps {
   autoFocus?: boolean
 }
 
-export function TextField({ label, value, onChange, hint, required, type = 'text', placeholder, list, autoFocus }: TextFieldProps) {
+export function TextField({ label, value, onChange, hint, error, required, type = 'text', placeholder, list, autoFocus }: TextFieldProps) {
   return (
-    <Field label={label} hint={hint} required={required}>
+    <Field label={label} hint={hint} error={error} required={required}>
       {(id) => (
-        <input id={id} className="input" type={type} value={value} placeholder={placeholder} list={list} required={required} autoFocus={autoFocus} onChange={(e) => onChange(e.target.value)} />
+        <input id={id} className="input" aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} type={type} value={value} placeholder={placeholder} list={list} required={required} autoFocus={autoFocus} onChange={(e) => onChange(e.target.value)} />
       )}
     </Field>
   )
@@ -89,19 +91,19 @@ export function TagInput({ label, value, onChange, hint, placeholder }: { label:
   return (
     <Field label={label} hint={hint ?? 'Entrée ou virgule pour ajouter'}>
       {(id) => (
-        <div className="rounded-lg border border-slate-300 bg-white p-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20">
+        <div className="rounded-lg border border-input bg-card p-2 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
           <div className="flex flex-wrap gap-1.5">
             {value.map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+              <span key={tag} className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
                 {tag}
-                <button type="button" onClick={() => onChange(value.filter((t) => t !== tag))} aria-label={`Retirer ${tag}`} className="rounded hover:bg-brand-100">
+                <button type="button" onClick={() => onChange(value.filter((t) => t !== tag))} aria-label={`Retirer ${tag}`} className="rounded hover:bg-primary/15">
                   <X className="h-3 w-3" />
                 </button>
               </span>
             ))}
             <input
               id={id}
-              className="min-w-[8rem] flex-1 bg-transparent px-1 py-0.5 text-sm outline-none placeholder:text-slate-400"
+              className="min-w-[8rem] flex-1 bg-transparent px-1 py-0.5 text-sm outline-none placeholder:text-muted-foreground/70"
               value={draft}
               placeholder={placeholder}
               onChange={(e) => setDraft(e.target.value)}

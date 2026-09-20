@@ -16,7 +16,7 @@ export function SearchFilters({ filters, companies, onChange }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative min-w-[14rem] flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <input className="input pl-9" type="search" placeholder="Rechercher (entreprise, poste, lieu, notes…)" value={filters.query} onChange={(e) => set('query', e.target.value)} aria-label="Rechercher dans les offres" />
       </div>
       <select className="input w-auto" value={filters.status} onChange={(e) => set('status', e.target.value as JobStatus | '')} aria-label="Filtrer par statut">
@@ -35,8 +35,8 @@ export function SearchFilters({ filters, companies, onChange }: Props) {
         <option value={0}>Tout score</option>
         {[50, 60, 70, 80, 90].map((n) => <option key={n} value={n}>Score ≥ {n}</option>)}
       </select>
-      <label className="flex items-center gap-2 px-1 text-sm text-slate-600">
-        <input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-indigo-600" checked={filters.followUpDue} onChange={(e) => set('followUpDue', e.target.checked)} />
+      <label className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
+        <input type="checkbox" className="h-4 w-4 rounded border-input accent-[var(--primary)]" checked={filters.followUpDue} onChange={(e) => set('followUpDue', e.target.checked)} />
         Relances dues
       </label>
       {hasActiveFilters(filters) && (

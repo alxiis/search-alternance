@@ -5,7 +5,26 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f5f6f8" />
     <title>Suivi Alternance</title>
+    <!-- Appliqué avant le premier rendu pour éviter tout clignotement dans le mauvais thème. -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('suivi-alternance:theme')
+          var dark = saved === 'dark' || (saved !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+          var root = document.documentElement
+          root.classList.toggle('dark', dark)
+          root.style.colorScheme = dark ? 'dark' : 'light'
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#0e131d' : '#f5f6f8')
+        } catch (e) {}
+      })()
+    </script>
+    <style>
+      html { background: #f5f6f8; }
+      html.dark { background: #0e131d; }
+    </style>
   </head>
   <body>
     <div id="root"></div>

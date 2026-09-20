@@ -52,7 +52,7 @@ export function JobsPage() {
   return (
     <div className="space-y-4">
       <SearchFilters filters={filters} companies={data.companies} onChange={(f) => { setFilters(f); setPage(0) }} />
-      <p className="text-sm text-slate-500" aria-live="polite">{visible.length} offre{visible.length > 1 ? 's' : ''}{hasActiveFilters(filters) ? ` sur ${data.jobs.length}` : ''}</p>
+      <p className="text-sm text-muted-foreground" aria-live="polite">{visible.length} offre{visible.length > 1 ? 's' : ''}{hasActiveFilters(filters) ? ` sur ${data.jobs.length}` : ''}</p>
 
       {visible.length === 0 ? (
         <div className="card"><EmptyState icon={Briefcase} title="Aucun résultat" description="Aucune offre ne correspond à ces filtres.">
@@ -60,10 +60,10 @@ export function JobsPage() {
         </EmptyState></div>
       ) : (
         <>
-          <div className="card hidden md:block">
+          <div className="card hidden lg:block">
             <JobTable jobs={pageJobs} companies={data.companies} sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
           </div>
-          <div className="grid gap-3 md:hidden">
+          <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
             {pageJobs.map((j) => <JobCard key={j.id} job={j} companyName={names.get(j.companyId ?? '')} />)}
           </div>
         </>
@@ -72,7 +72,7 @@ export function JobsPage() {
       {pageCount > 1 && (
         <div className="flex items-center justify-center gap-3">
           <button className="btn-secondary btn-sm" disabled={current === 0} onClick={() => setPage(current - 1)} aria-label="Page précédente"><ChevronLeft className="h-4 w-4" /></button>
-          <span className="text-sm text-slate-600">Page {current + 1} / {pageCount}</span>
+          <span className="text-sm text-muted-foreground">Page {current + 1} / {pageCount}</span>
           <button className="btn-secondary btn-sm" disabled={current >= pageCount - 1} onClick={() => setPage(current + 1)} aria-label="Page suivante"><ChevronRight className="h-4 w-4" /></button>
         </div>
       )}

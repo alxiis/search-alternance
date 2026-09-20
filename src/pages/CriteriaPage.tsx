@@ -40,24 +40,24 @@ export function CriteriaPage() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
-      <aside className="space-y-2" aria-label="Profils de recherche">
+      <aside className="min-w-0 space-y-2" aria-label="Profils de recherche">
         {data.criteria.map((c) => (
-          <button key={c.id} onClick={() => setSelectedId(c.id)} className={cn('card flex w-full items-center gap-2 p-3 text-left text-sm', selected?.id === c.id && 'border-brand-500 ring-2 ring-brand-500/20')}>
-            <span className="min-w-0 flex-1 truncate font-medium text-slate-800">{c.name || 'Sans nom'}</span>
-            {activeId === c.id && <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">Active</span>}
+          <button key={c.id} onClick={() => setSelectedId(c.id)} className={cn('card flex w-full items-center gap-2 p-3 text-left text-sm', selected?.id === c.id && 'border-ring ring-2 ring-ring/25')}>
+            <span className="min-w-0 flex-1 truncate font-medium text-foreground">{c.name || 'Sans nom'}</span>
+            {activeId === c.id && <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">Active</span>}
           </button>
         ))}
         <button className="btn-secondary w-full" onClick={() => void create()}><Plus className="h-4 w-4" aria-hidden /> Nouvelle recherche</button>
       </aside>
 
       {selected && (
-        <section className="card p-5">
+        <section className="card min-w-0 p-5">
           <div className="mb-4 flex flex-wrap gap-2">
             <button className="btn-secondary btn-sm" disabled={activeId === selected.id} onClick={() => void saveSettings({ activeCriteriaId: selected.id })}>
               <Star className="h-3.5 w-3.5" aria-hidden /> {activeId === selected.id ? 'Recherche active' : 'Définir comme active'}
             </button>
             <button className="btn-secondary btn-sm" onClick={() => void duplicate()}><Copy className="h-3.5 w-3.5" aria-hidden /> Dupliquer</button>
-            <button className="btn-ghost btn-sm ml-auto text-rose-600 hover:bg-rose-50" onClick={() => setConfirmDelete(true)}><Trash2 className="h-3.5 w-3.5" aria-hidden /> Supprimer</button>
+            <button className="btn-ghost btn-sm ml-auto text-danger hover:bg-danger-soft" onClick={() => setConfirmDelete(true)}><Trash2 className="h-3.5 w-3.5" aria-hidden /> Supprimer</button>
           </div>
           <SearchCriteriaForm key={selected.id} criteria={selected} />
         </section>

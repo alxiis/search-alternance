@@ -33,9 +33,9 @@ function List({ title, items, tone }: { title: string; items: string[]; tone?: s
   if (!items.length) return null
   return (
     <div>
-      <h4 className="mb-1.5 text-sm font-semibold text-slate-800">{title}</h4>
+      <h4 className="mb-1.5 text-sm font-semibold text-foreground">{title}</h4>
       <ul className="flex flex-wrap gap-1.5">
-        {items.map((i) => <li key={i} className={cn('rounded-md px-2 py-0.5 text-xs', tone ?? 'bg-slate-100 text-slate-700')}>{i}</li>)}
+        {items.map((i) => <li key={i} className={cn('rounded-md px-2 py-0.5 text-xs', tone ?? 'bg-muted text-foreground')}>{i}</li>)}
       </ul>
     </div>
   )
@@ -45,8 +45,8 @@ function Paragraph({ title, text }: { title: string; text: string }) {
   if (!text) return null
   return (
     <div>
-      <h4 className="mb-1 text-sm font-semibold text-slate-800">{title}</h4>
-      <p className="whitespace-pre-line text-sm text-slate-600">{text}</p>
+      <h4 className="mb-1 text-sm font-semibold text-foreground">{title}</h4>
+      <p className="whitespace-pre-line text-sm text-muted-foreground">{text}</p>
     </div>
   )
 }
@@ -116,7 +116,7 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
         onClose={requestClose}
         footer={
           <>
-            <button className="btn-ghost mr-auto text-rose-600 hover:bg-rose-50" onClick={() => setConfirm('delete')}>
+            <button className="btn-ghost mr-auto text-danger hover:bg-danger-soft" onClick={() => setConfirm('delete')}>
               <Trash2 className="h-4 w-4" aria-hidden /> Supprimer
             </button>
             <button className="btn-secondary" onClick={requestClose}>Fermer</button>
@@ -126,7 +126,7 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
       >
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <ScoreBadge score={draft.compatibilityScore} />
-          <span className="text-sm text-slate-500">{originalCompany || 'Entreprise inconnue'}</span>
+          <span className="text-sm text-muted-foreground">{originalCompany || 'Entreprise inconnue'}</span>
           <div className="ml-auto flex flex-wrap gap-2">
             {draft.url && (
               <a className="btn-secondary btn-sm" href={draft.url} target="_blank" rel="noopener noreferrer">
@@ -139,14 +139,14 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
           </div>
         </div>
 
-        <div role="tablist" className="mb-5 flex gap-1 border-b border-slate-200">
+        <div role="tablist" className="mb-5 flex gap-1 border-b border-border">
           {TABS.map((t) => (
             <button
               key={t.id}
               role="tab"
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
-              className={cn('-mb-px border-b-2 px-3 py-2 text-sm font-medium', tab === t.id ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800')}
+              className={cn('-mb-px border-b-2 px-3 py-2 text-sm font-medium', tab === t.id ? 'border-ring text-accent-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}
             >
               {t.label}
             </button>
@@ -181,7 +181,7 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
               <TextField label="Date d'entretien" type="date" value={app.interviewDate ?? ''} onChange={(v) => setApp({ interviewDate: v || null })} />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-slate-600">Relance dans :</span>
+              <span className="text-sm text-muted-foreground">Relance dans :</span>
               {[3, 7, 14].map((d) => (
                 <button key={d} className="btn-secondary btn-sm" onClick={() => setApp({ followUpDate: addDays(today(), d) })}>{d} jours</button>
               ))}
@@ -191,7 +191,7 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
               <TextField label="Prochaine action" value={app.nextAction} onChange={(v) => setApp({ nextAction: v })} />
               <TextField label="Réponse reçue" value={app.response} onChange={(v) => setApp({ response: v })} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-800">Contact RH</h3>
+            <h3 className="text-sm font-semibold text-foreground">Contact RH</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField label="Nom" value={app.contact.name} onChange={(v) => setContact({ name: v })} />
               <TextField label="Email" type="email" value={app.contact.email} onChange={(v) => setContact({ email: v })} />
@@ -204,13 +204,13 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
         {tab === 'analysis' &&
           (analysis ? (
             <div className="space-y-5">
-              <div className="flex items-center gap-4 rounded-xl bg-slate-50 p-4">
+              <div className="flex items-center gap-4 rounded-xl bg-muted p-4">
                 <ScoreBadge score={analysis.compatibilityScore} className="!px-4 !py-1.5 !text-lg" />
-                <p className="text-xs text-slate-500">Score calculé par Claude lors de l'analyse du {formatDate(analysis.analyzedAt)}. L'application ne le recalcule pas.</p>
+                <p className="text-xs text-muted-foreground">Score calculé par Claude lors de l'analyse du {formatDate(analysis.analyzedAt)}. L'application ne le recalcule pas.</p>
               </div>
               <Paragraph title="Explication du score" text={analysis.scoreExplanation} />
-              <List title="Correspondances" items={analysis.matchingSkills} tone="bg-emerald-50 text-emerald-800" />
-              <List title="Compétences manquantes" items={analysis.missingSkills} tone="bg-rose-50 text-rose-800" />
+              <List title="Correspondances" items={analysis.matchingSkills} tone="bg-success-soft text-success-soft-foreground" />
+              <List title="Compétences manquantes" items={analysis.missingSkills} tone="bg-danger-soft text-danger-soft-foreground" />
               <List title="Points forts" items={analysis.strengths} />
               <List title="Points faibles" items={analysis.weaknesses} />
               <List title="À mettre en avant" items={analysis.keyPoints} />
@@ -221,11 +221,11 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
               <Paragraph title="Recommandation" text={analysis.recommendation} />
               {analysis.sources.length > 0 && (
                 <div>
-                  <h4 className="mb-1 text-sm font-semibold text-slate-800">Sources</h4>
+                  <h4 className="mb-1 text-sm font-semibold text-foreground">Sources</h4>
                   <ul className="space-y-0.5 text-xs">
                     {analysis.sources.map((s) => (
                       <li key={s} className="truncate">
-                        {/^https?:\/\//.test(s) ? <a className="text-brand-600 hover:underline" href={s} target="_blank" rel="noopener noreferrer">{s}</a> : s}
+                        {/^https?:\/\//.test(s) ? <a className="text-accent-foreground hover:underline" href={s} target="_blank" rel="noopener noreferrer">{s}</a> : s}
                       </li>
                     ))}
                   </ul>
@@ -247,10 +247,10 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
                   text && (
                     <div key={title}>
                       <div className="mb-1 flex items-center justify-between">
-                        <h4 className="text-sm font-semibold text-slate-800">{title}</h4>
+                        <h4 className="text-sm font-semibold text-foreground">{title}</h4>
                         <button className="btn-secondary btn-sm" onClick={() => void copyLetter(text)}>Copier</button>
                       </div>
-                      <p className="whitespace-pre-line rounded-lg bg-slate-50 p-3 text-sm text-slate-700">{text}</p>
+                      <p className="whitespace-pre-line rounded-lg bg-muted p-3 text-sm text-foreground">{text}</p>
                     </div>
                   ),
               )}

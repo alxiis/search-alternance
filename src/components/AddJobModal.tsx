@@ -77,10 +77,7 @@ export function AddJobModal({ initialUrl = '', onClose, onCreated, onOpenExistin
       }
     >
       <form id="add-job-form" className="space-y-4" onSubmit={onSubmit} noValidate>
-        <div>
-          <TextField label="URL de l'offre" required value={form.url} onChange={(v) => { set('url', v); setUrlError(null) }} placeholder="https://…" type="url" autoFocus />
-          {urlError && <p role="alert" className="mt-1 text-xs text-rose-600">{urlError}</p>}
-        </div>
+        <TextField label="URL de l'offre" required value={form.url} onChange={(v) => { set('url', v); setUrlError(null) }} placeholder="https://…" type="url" autoFocus error={urlError} />
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField label="Entreprise" value={form.companyName} onChange={(v) => set('companyName', v)} list="company-names" hint="Facultatif : Claude pourra la compléter" />
           <TextField label="Poste" value={form.title} onChange={(v) => set('title', v)} />
@@ -89,7 +86,7 @@ export function AddJobModal({ initialUrl = '', onClose, onCreated, onOpenExistin
           {data.companies.map((c) => <option key={c.id} value={c.name} />)}
         </datalist>
 
-        <button type="button" className="text-sm font-medium text-brand-600 hover:underline" onClick={() => setShowMore((s) => !s)} aria-expanded={showMore}>
+        <button type="button" className="text-sm font-medium text-accent-foreground hover:underline" onClick={() => setShowMore((s) => !s)} aria-expanded={showMore}>
           {showMore ? 'Masquer les détails' : 'Ajouter plus de détails'}
         </button>
 
@@ -112,7 +109,7 @@ export function AddJobModal({ initialUrl = '', onClose, onCreated, onOpenExistin
         )}
 
         {duplicate && (
-          <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <div role="alert" className="rounded-lg border border-warning/30 bg-warning-soft p-3 text-sm text-warning-soft-foreground">
             <p className="font-medium">Cette offre existe déjà ({DUPLICATE_REASON_LABEL[duplicate.reason]}).</p>
             <p className="mt-0.5 text-xs">{duplicate.job.title || duplicate.job.url}</p>
             <button type="button" className="btn-secondary btn-sm mt-2" onClick={() => onOpenExisting(duplicate.job.id)}>Ouvrir l'offre existante</button>
