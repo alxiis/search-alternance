@@ -1,4 +1,4 @@
-import { ExternalLink, FileText, Import, Sparkles, Trash2 } from 'lucide-react'
+import { ExternalLink, FileText, Import, Search, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { ALL_STATUSES, CONTRACT_TYPES, STATUS_META } from '../data/constants'
 import { useStore } from '../hooks/useStore'
@@ -7,6 +7,7 @@ import { copyText } from '../lib/clipboard'
 import type { JobOffer, JobStatus } from '../types'
 import { addDays, formatDate, today } from '../utils/dates'
 import { cn } from '../utils/text'
+import { offerSearchUrl } from '../utils/url'
 import { ConfirmDialog } from './ConfirmDialog'
 import { EmptyState } from './EmptyState'
 import { Modal } from './Modal'
@@ -128,9 +129,19 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
           <ScoreBadge score={draft.compatibilityScore} />
           <span className="text-sm text-muted-foreground">{originalCompany || 'Entreprise inconnue'}</span>
           <div className="ml-auto flex flex-wrap gap-2">
-            {draft.url && (
+            {draft.url ? (
               <a className="btn-secondary btn-sm" href={draft.url} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Voir l'offre
+              </a>
+            ) : (
+              <a
+                className="btn-secondary btn-sm"
+                href={offerSearchUrl(draft, companyName)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Pas d'URL enregistrée : lancer une recherche web pour retrouver cette offre, puis collez son adresse dans l'onglet Offre"
+              >
+                <Search className="h-3.5 w-3.5" aria-hidden /> Chercher cette offre
               </a>
             )}
             <button className="btn-primary btn-sm" onClick={onAnalyze}><Sparkles className="h-3.5 w-3.5" aria-hidden /> Analyser avec Claude</button>
