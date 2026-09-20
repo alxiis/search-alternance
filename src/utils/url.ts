@@ -39,3 +39,10 @@ export function ensureProtocol(value: string): string {
   if (!v) return v
   return /^https?:\/\//i.test(v) ? v : `https://${v}`
 }
+
+/** Recherche web pré-remplie pour retrouver une offre dont l'URL est inconnue. */
+export function offerSearchUrl(job: { title: string; location: string }, companyName: string): string {
+  const hasKeyword = /alternan|apprenti/i.test(job.title)
+  const terms = [job.title, companyName, job.location, hasKeyword ? '' : 'alternance'].filter(Boolean).join(' ')
+  return `https://www.google.com/search?q=${encodeURIComponent(terms)}`
+}

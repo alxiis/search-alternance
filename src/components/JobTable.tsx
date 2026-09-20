@@ -1,9 +1,10 @@
-import { ArrowDown, ArrowUp, ExternalLink, Sparkles } from 'lucide-react'
+import { ArrowDown, ArrowUp, ExternalLink, Search, Sparkles } from 'lucide-react'
 import { useUi } from '../hooks/useUi'
 import type { Company, JobOffer } from '../types'
 import { formatShortDate, today } from '../utils/dates'
 import type { SortDir, SortKey } from '../utils/jobFilters'
 import { cn } from '../utils/text'
+import { offerSearchUrl } from '../utils/url'
 import { ScoreBadge } from './ScoreBadge'
 import { StatusSelect } from './StatusSelect'
 
@@ -78,7 +79,18 @@ export function JobTable({ jobs, companies, sortKey, sortDir, onSort }: Props) {
                   <a href={j.url} target="_blank" rel="noopener noreferrer" className="inline-flex text-muted-foreground hover:text-accent-foreground" aria-label={`Ouvrir l'offre ${j.title}`}>
                     <ExternalLink className="h-4 w-4" />
                   </a>
-                ) : '—'}
+                ) : (
+                  <a
+                    href={offerSearchUrl(j, names.get(j.companyId ?? '') ?? '')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary btn-sm whitespace-nowrap"
+                    title="Pas d'URL enregistrée : lancer une recherche web pour retrouver cette offre"
+                    aria-label={`Chercher l'offre ${j.title} sur le web`}
+                  >
+                    <Search className="h-3.5 w-3.5" aria-hidden /> Chercher
+                  </a>
+                )}
               </td>
               <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">{formatShortDate(j.lastActionAt)}</td>
               <td className="px-3 py-2.5"><FollowUpLabel date={j.application.followUpDate} /></td>

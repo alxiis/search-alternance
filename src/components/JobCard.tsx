@@ -1,7 +1,8 @@
-import { CalendarClock, MapPin, Sparkles } from 'lucide-react'
+import { CalendarClock, ExternalLink, MapPin, Search, Sparkles } from 'lucide-react'
 import { useUi } from '../hooks/useUi'
 import type { JobOffer } from '../types'
 import { formatShortDate } from '../utils/dates'
+import { offerSearchUrl } from '../utils/url'
 import { ScoreBadge } from './ScoreBadge'
 import { StatusSelect } from './StatusSelect'
 
@@ -30,7 +31,19 @@ export function JobCard({ job, companyName }: Props) {
       </div>
       <div className="mt-3 flex items-center justify-between gap-2">
         <StatusSelect job={job} />
-        <button className="btn-secondary btn-sm" onClick={() => analyzeJob(job.id)}><Sparkles className="h-3.5 w-3.5" aria-hidden /> Analyser</button>
+        <div className="flex gap-2">
+          <a
+            className="btn-secondary btn-sm"
+            href={job.url || offerSearchUrl(job, companyName ?? '')}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={job.url ? "Ouvrir la page de l'offre" : "Pas d'URL enregistrée : lancer une recherche web pour retrouver cette offre"}
+          >
+            {job.url ? <ExternalLink className="h-3.5 w-3.5" aria-hidden /> : <Search className="h-3.5 w-3.5" aria-hidden />}
+            {job.url ? 'Voir' : 'Chercher'}
+          </a>
+          <button className="btn-secondary btn-sm" onClick={() => analyzeJob(job.id)}><Sparkles className="h-3.5 w-3.5" aria-hidden /> Analyser</button>
+        </div>
       </div>
     </article>
   )

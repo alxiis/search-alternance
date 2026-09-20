@@ -114,6 +114,12 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
   }
+  /* Les listes déroulantes natives héritent de la couleur du <select> : on force des couleurs lisibles dans les deux thèmes. */
+  select option,
+  select optgroup {
+    background-color: var(--card);
+    color: var(--foreground);
+  }
   ::selection {
     background: color-mix(in srgb, var(--primary) 28%, transparent);
   }
