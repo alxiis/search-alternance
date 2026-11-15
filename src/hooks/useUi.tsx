@@ -6,6 +6,7 @@ import { LetterModal } from '../components/LetterModal'
 import { PromptModal } from '../components/PromptModal'
 import { buildAnalyzeJobPrompt } from '../prompts/analyzeJob'
 import { buildFindCompanyJobsPrompt } from '../prompts/findCompanyJobs'
+import { buildVerifyJobPrompt } from '../prompts/verifyJob'
 import type { PromptResult } from '../types'
 import { useStore } from './useStore'
 
@@ -15,6 +16,7 @@ interface UiApi {
   openImport: (targetJobId?: string) => void
   showPrompt: (result: PromptResult) => void
   analyzeJob: (jobId: string) => void
+  verifyJob: (jobId: string) => void
   writeLetter: (jobId: string) => void
   searchCompanyJobs: (companyId: string) => void
 }
@@ -48,6 +50,17 @@ export function UiProvider({ children }: { children: ReactNode }) {
           jobId: id,
         })
       },
+      verifyJob(id) {
+        const job = data.jobs.find((j) => j.id === id)
+        if (!job) return
+        const company = data.companies.find((c) => c.id === job.companyId)
+        setPrompt({
+          kind: 'verifyJob',
+          title: `Vérifier — ${job.title || company?.name || job.url || 'offre'}`,
+          text: buildVerifyJobPrompt(job, company),
+          jobId: id,
+        })
+      },
       writeLetter: setLetterJobId,
       searchCompanyJobs(companyId) {
         const company = data.companies.find((c) => c.id === companyId)
@@ -55,7 +68,7 @@ export function UiProvider({ children }: { children: ReactNode }) {
         setPrompt({
           kind: 'findCompanyJobs',
           title: `Nouvelles offres — ${company.name}`,
-          text: buildFindCompanyJobsPrompt(company, data.profile, activeCriteria()),
+          text: buildFindCompanyJobsPrompt(company, data.profile, activeCriteria(), { known: { companies: data.companies, jobs: data.jobs } }),
           companyId,
         })
         void markCompanySearched(companyId).catch(() => undefined)
@@ -80,6 +93,7 @@ export function UiProvider({ children }: { children: ReactNode }) {
           onClose={() => setJobId(null)}
           onAnalyze={() => api.analyzeJob(jobId)}
           onLetter={() => setLetterJobId(jobId)}
+          onVerify={() => api.verifyJob(jobId)}
           onImport={() => setImportTarget({ jobId })}
         />
       )}

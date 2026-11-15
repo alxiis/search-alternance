@@ -1,17 +1,17 @@
-import { ExternalLink, FileText, Import, Search, Sparkles, Trash2 } from 'lucide-react'
+import { ExternalLink, FileText, Import, Search, ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { ALL_STATUSES, CONTRACT_TYPES, STATUS_META } from '../data/constants'
+import { ALL_STATUSES, CONTRACT_TYPES, STATUS_META, STUDY_LEVELS } from '../data/constants'
 import { useStore } from '../hooks/useStore'
 import { useToast } from '../hooks/useToast'
 import { copyText } from '../lib/clipboard'
-import type { JobOffer, JobStatus } from '../types'
+import type { JobAvailability, JobOffer, JobStatus } from '../types'
 import { addDays, formatDate, today } from '../utils/dates'
 import { cn } from '../utils/text'
 import { offerSearchUrl } from '../utils/url'
 import { ConfirmDialog } from './ConfirmDialog'
 import { EmptyState } from './EmptyState'
 import { Modal } from './Modal'
-import { ScoreBadge } from './ScoreBadge'
+import { AVAILABILITY_LABEL, AvailabilityBadge, ScoreBadge } from './ScoreBadge'
 import { SelectField, TagInput, TextArea, TextField } from './fields'
 
 interface Props {
@@ -19,6 +19,7 @@ interface Props {
   onClose: () => void
   onAnalyze: () => void
   onLetter: () => void
+  onVerify: () => void
   onImport: () => void
 }
 
@@ -52,7 +53,7 @@ function Paragraph({ title, text }: { title: string; text: string }) {
   )
 }
 
-export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport }: Props) {
+export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onVerify, onImport }: Props) {
   const { data, updateJob, setJobStatus, deleteJob } = useStore()
   const { notify } = useToast()
   const original = data.jobs.find((j) => j.id === jobId)
@@ -126,7 +127,8 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
         }
       >
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <ScoreBadge score={draft.compatibilityScore} />
+          <ScoreBadge score={draft.compatibilityScore} estimated={!draft.analysis} />
+          <AvailabilityBadge availability={draft.availability} verifiedAt={draft.verifiedAt} showOpen />
           <span className="text-sm text-muted-foreground">{originalCompany || 'Entreprise inconnue'}</span>
           <div className="ml-auto flex flex-wrap gap-2">
             {draft.url ? (
@@ -146,6 +148,7 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
             )}
             <button className="btn-primary btn-sm" onClick={onAnalyze}><Sparkles className="h-3.5 w-3.5" aria-hidden /> Analyser avec Claude</button>
             <button className="btn-secondary btn-sm" onClick={onLetter}><FileText className="h-3.5 w-3.5" aria-hidden /> Générer ma lettre</button>
+            <button className="btn-secondary btn-sm" onClick={onVerify} title="Demander à Claude si l'annonce est toujours en ligne et fiable"><ShieldCheck className="h-3.5 w-3.5" aria-hidden /> Vérifier l'annonce</button>
             <button className="btn-secondary btn-sm" onClick={onImport}><Import className="h-3.5 w-3.5" aria-hidden /> Importer résultat Claude</button>
           </div>
         </div>
@@ -172,14 +175,32 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onImport 
             <div className="sm:col-span-2"><TextField label="URL de l'offre" type="url" value={draft.url} onChange={(v) => set('url', v)} /></div>
             <TextField label="Localisation" value={draft.location} onChange={(v) => set('location', v)} />
             <SelectField label="Type de contrat" value={draft.contractType} onChange={(v) => set('contractType', v)} options={['', ...CONTRACT_TYPES]} />
+            <TextField label="Début du contrat" value={draft.startDate} onChange={(v) => set('startDate', v)} placeholder="Ex. : septembre 2027" />
+            <TextField label="Durée" value={draft.duration} onChange={(v) => set('duration', v)} placeholder="Ex. : 12 mois" />
+            <TextField label="Rythme d'alternance" value={draft.rhythm} onChange={(v) => set('rhythm', v)} placeholder="Ex. : 3 semaines / 1 semaine" />
+            <TextField label="Niveau d'études demandé" value={draft.studyLevel} onChange={(v) => set('studyLevel', v)} list="job-study-levels" />
+            <datalist id="job-study-levels">{STUDY_LEVELS.map((l) => <option key={l} value={l} />)}</datalist>
             <TextField label="Date de publication" type="date" value={draft.publishedAt ?? ''} onChange={(v) => set('publishedAt', v || null)} />
             <TextField label="Date de découverte" type="date" value={draft.discoveredAt} onChange={(v) => set('discoveredAt', v || today())} />
+            <SelectField
+              label="État de l'annonce"
+              value={draft.availability}
+              onChange={(v) => setDraft({ ...draft, availability: v as JobAvailability, verifiedAt: v ? today() : null })}
+              options={(Object.keys(AVAILABILITY_LABEL) as JobAvailability[]).map((a) => ({ value: a, label: AVAILABILITY_LABEL[a] }))}
+              hint={draft.verifiedAt ? `Vérifiée le ${formatDate(draft.verifiedAt)}.` : 'Mis à jour quand vous importez une vérification Claude.'}
+            />
             <TextField label="Salaire" value={draft.salary} onChange={(v) => set('salary', v)} />
             <SelectField label="Statut" value={draft.status} onChange={(v) => set('status', v as JobStatus)} options={ALL_STATUSES.map((s) => ({ value: s, label: STATUS_META[s].label }))} />
             <div className="sm:col-span-2"><TextArea label="Description de l'offre" rows={5} value={draft.description} onChange={(v) => set('description', v)} hint="Collez ici le texte de l'offre : il sera inclus dans le prompt d'analyse." /></div>
             <TagInput label="Compétences demandées" value={draft.skills} onChange={(v) => set('skills', v)} />
             <TagInput label="Exigences" value={draft.requirements} onChange={(v) => set('requirements', v)} />
             <div className="sm:col-span-2"><TextArea label="Notes" rows={3} value={draft.notes} onChange={(v) => set('notes', v)} /></div>
+            {draft.matchReasons.length > 0 && (
+              <div className="sm:col-span-2">
+                <h4 className="mb-1 text-sm font-semibold text-foreground">Pourquoi cette offre (recherche Claude)</h4>
+                <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">{draft.matchReasons.map((r) => <li key={r}>{r}</li>)}</ul>
+              </div>
+            )}
           </div>
         )}
 

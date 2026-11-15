@@ -55,6 +55,16 @@ export interface SearchCriteria {
   availabilityDate: string
   requiredTech: string[]
   preferredTech: string[]
+  /** Rythme d'alternance souhaité ou imposé par l'école (ex. « 3 semaines entreprise / 1 semaine école »). */
+  rhythm: string
+  /** Durée du contrat visée (ex. « 12 mois », « 24 mois »). */
+  contractDuration: string
+  /** Secteurs d'activité visés. */
+  sectors: string[]
+  /** Mots-clés, types de postes ou entreprises à écarter des résultats. */
+  excludedKeywords: string[]
+  /** Ancienneté maximale des offres, en jours (0 = sans limite). */
+  maxAgeDays: number
   updatedAt: string
 }
 
@@ -129,6 +139,9 @@ export interface CoverLetters {
   generatedAt: string
 }
 
+/** État de l'annonce d'après la dernière vérification. '' = jamais vérifiée. */
+export type JobAvailability = '' | 'open' | 'expired' | 'doubtful'
+
 export interface JobOffer {
   id: string
   companyId: string | null
@@ -142,10 +155,26 @@ export interface JobOffer {
   salary: string
   publishedAt: string | null
   source: string
+  /** Date de début du contrat, telle qu'annoncée (texte libre : « septembre 2027 », « dès que possible »…). */
+  startDate: string
+  /** Durée du contrat (ex. « 12 mois »). */
+  duration: string
+  /** Rythme d'alternance annoncé. */
+  rhythm: string
+  /** Niveau d'études préparé ou demandé (ex. « Bac+3 »). */
+  studyLevel: string
+  /** Raisons pour lesquelles l'offre a été retenue lors d'une recherche Claude. */
+  matchReasons: string[]
+  /** Date (YYYY-MM-DD) à laquelle Claude a confirmé l'état de l'annonce. */
+  verifiedAt: string | null
+  availability: JobAvailability
   discoveredAt: string
   status: JobStatus
   notes: string
-  /** 0-100, fourni par l'analyse Claude importée. null = pas encore analysé. */
+  /**
+   * 0-100, fourni par Claude. Si `analysis` est null, c'est une estimation rapide issue d'une recherche ;
+   * sinon c'est le score de l'analyse détaillée. null = aucun score.
+   */
   compatibilityScore: number | null
   analysis: ClaudeAnalysis | null
   coverLetters: CoverLetters | null

@@ -1,16 +1,11 @@
 import type { AppData, AppSettings, Company, JobOffer, Profile, SearchCriteria, StoredFile } from '../types'
 import { db } from '../lib/db'
-import { emptyApplication, emptyProfile, emptySettings } from '../lib/factories'
+import { emptyProfile, emptySettings, hydrateCompany, hydrateCriteria, hydrateJob } from '../lib/factories'
 
 const PROFILE_ID = 'me'
 const SETTINGS_ID = 'app'
 
 type WithId<T> = T & { id: string }
-
-/** Complète les enregistrements anciens avec les valeurs par défaut des nouveaux champs. */
-function hydrateJob(j: JobOffer): JobOffer {
-  return { ...j, application: { ...emptyApplication(), ...j.application, contact: { ...emptyApplication().contact, ...j.application?.contact } } }
-}
 
 export async function loadAll(): Promise<AppData> {
   const [profiles, criteria, companies, jobs, files, settings] = await Promise.all([
@@ -26,8 +21,8 @@ export async function loadAll(): Promise<AppData> {
   return {
     profile: { ...emptyProfile(), ...profile },
     settings: { ...emptySettings(), ...savedSettings },
-    criteria,
-    companies,
+    criteria: criteria.map(hydrateCriteria),
+    companies: companies.map(hydrateCompany),
     jobs: jobs.map(hydrateJob),
     files,
   }
@@ -46,15 +41,14 @@ export const storage = {
   deleteFile: (id: string) => db.remove('files', id),
   clearFiles: () => db.clear(['files']),
   clearAll: () => db.clear(['profile', 'criteria', 'companies', 'jobs', 'files', 'settings']),
-  async replaceAll(data: AppData): Promise<void> {
-    await storage.clearAll()
-    await Promise.all([
-      storage.saveProfile(data.profile),
-      storage.saveSettings(data.settings),
-      db.putMany('criteria', data.criteria),
-      db.putMany('companies', data.companies),
-      db.putMany('jobs', data.jobs),
-      db.putMany('files', data.files),
-    ])
-  },
+  /** Une seule transaction : si l'écriture échoue (quota, onglet fermé…), les données précédentes sont conservées. */
+  replaceAll: (data: AppData) =>
+    db.replaceAll({
+      profile: [{ ...data.profile, id: PROFILE_ID }],
+      settings: [{ ...data.settings, id: SETTINGS_ID }],
+      criteria: data.criteria,
+      companies: data.companies,
+      jobs: data.jobs,
+      files: data.files,
+    }),
 }

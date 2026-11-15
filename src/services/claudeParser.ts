@@ -1,7 +1,8 @@
-import type { ClaudeAnalysis, CoverLetters } from '../types'
+import type { ClaudeAnalysis, CoverLetters, JobAvailability } from '../types'
 import { emptyAnalysis } from '../lib/factories'
 import { coerceIsoDate, nowIso } from '../utils/dates'
-import { unique } from '../utils/text'
+import { normalizeContractType, normalizeText, unique } from '../utils/text'
+import { toSafeHttpUrl } from '../utils/url'
 
 export interface RawCompany {
   name: string
@@ -27,6 +28,15 @@ export interface RawJob {
   salary: string
   publishedAt: string | null
   source: string
+  startDate: string
+  duration: string
+  rhythm: string
+  studyLevel: string
+  /** Estimation rapide (0-100) donnée par une recherche, sans analyse détaillée. */
+  matchScore: number | null
+  matchReasons: string[]
+  verifiedAt: string | null
+  availability: JobAvailability
   analysis: ClaudeAnalysis | null
   coverLetters: CoverLetters | null
 }
@@ -52,9 +62,49 @@ function isObj(v: unknown): v is Obj {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
+/** Valeurs que Claude écrit parfois à la place d'un champ vide : on les traite comme « inconnu ». */
+const PLACEHOLDER =
+  /^(non (disponible|renseign[ée]e?|pr[ée]cis[ée]e?|communiqu[ée]e?|indiqu[ée]e?|sp[ée]cifi[ée]e?|trouv[ée]e?|mentionn[ée]e?)|n\/?a|n\.?c\.?|inconnue?|vide|null|undefined|none|-+|—|\?+|\.{3}|…)\.?$/i
+
 function str(v: unknown): string {
-  if (typeof v === 'string') return v.trim()
+  if (typeof v === 'string') {
+    const s = v.trim()
+    return PLACEHOLDER.test(s) ? '' : s
+  }
   if (typeof v === 'number' || typeof v === 'boolean') return String(v)
+  return ''
+}
+
+/** URL http(s) uniquement : une valeur illisible est écartée avec un avertissement. */
+function httpUrl(v: unknown, warnings: string[], label: string): string {
+  const raw = str(v)
+  if (!raw) return ''
+  const safe = toSafeHttpUrl(raw)
+  if (!safe) warnings.push(`${label} : adresse "${raw.slice(0, 80)}" invalide, ignorée.`)
+  return safe
+}
+
+/** Score 0-100 : accepte "85", "85 %", "85/100" ; borne les valeurs hors limites. */
+function score(v: unknown, warnings: string[], label: string): number | null {
+  if (v === null || v === undefined || v === '') return null
+  const n = typeof v === 'number' ? v : Number(String(v).replace(',', '.').replace(/\s*(%|\/\s*100)\s*$/, ''))
+  if (!Number.isFinite(n)) {
+    if (str(v)) warnings.push(`${label} : score "${str(v)}" illisible, ignoré.`)
+    return null
+  }
+  if (n < 0 || n > 100) warnings.push(`${label} : score ${n} hors de 0-100, borné automatiquement.`)
+  return Math.round(Math.min(100, Math.max(0, n)))
+}
+
+function availability(v: unknown): JobAvailability {
+  const raw = str(v)
+  // Modèle recopié tel quel (« open | expired | doubtful ») : aucune information.
+  if (raw.includes('|')) return ''
+  const n = normalizeText(raw)
+  if (!n) return ''
+  if (/dout|suspect|doubt|scam|fraud|arnaque/.test(n)) return 'doubtful'
+  if (/expir|closed|close|retir|pourvu|ferme|clotur|plus en ligne|hors ligne|indisponible|unavailable|inactive|filled/.test(n)) return 'expired'
+  if (/open|ouvert|en ligne|online|active|disponible|available/.test(n)) return 'open'
   return ''
 }
 
@@ -121,16 +171,7 @@ export function extractJsonCandidates(text: string): { values: unknown[]; lastEr
 function normalizeAnalysis(raw: unknown, warnings: string[], label: string): ClaudeAnalysis | null {
   if (!isObj(raw)) return null
   const a = emptyAnalysis()
-  const scoreRaw = raw.compatibilityScore ?? raw.score
-  if (scoreRaw !== null && scoreRaw !== undefined && scoreRaw !== '') {
-    const n = typeof scoreRaw === 'number' ? scoreRaw : Number(String(scoreRaw).replace(',', '.').replace('%', ''))
-    if (Number.isFinite(n)) {
-      if (n < 0 || n > 100) warnings.push(`${label} : score ${n} hors de 0-100, borné automatiquement.`)
-      a.compatibilityScore = Math.round(Math.min(100, Math.max(0, n)))
-    } else {
-      warnings.push(`${label} : score "${str(scoreRaw)}" illisible, ignoré.`)
-    }
-  }
+  a.compatibilityScore = score(raw.compatibilityScore ?? raw.score, warnings, label)
   a.scoreExplanation = str(raw.scoreExplanation ?? raw.explanation)
   a.matchingSkills = strList(raw.matchingSkills)
   a.missingSkills = strList(raw.missingSkills)
@@ -177,8 +218,8 @@ function normalizeCompany(raw: unknown, warnings: string[], label: string): RawC
     name,
     sector: str(raw.sector),
     location: str(raw.location),
-    website: str(raw.website),
-    careersUrl: str(raw.careersUrl),
+    website: httpUrl(raw.website, warnings, `${label}.website`),
+    careersUrl: httpUrl(raw.careersUrl, warnings, `${label}.careersUrl`),
     description: str(raw.description),
     compatibilityReasons: strList(raw.compatibilityReasons),
     sources: strList(raw.sources),
@@ -189,7 +230,7 @@ function normalizeCompany(raw: unknown, warnings: string[], label: string): RawC
 function normalizeJob(raw: unknown, fallbackCompany: string, warnings: string[], label: string): RawJob | null {
   if (!isObj(raw)) return null
   const title = str(raw.title)
-  const url = str(raw.url)
+  const url = httpUrl(raw.url, warnings, `${label}.url`)
   if (!title && !url) {
     warnings.push(`${label} : offre sans "title" ni "url", ignorée.`)
     return null
@@ -197,19 +238,27 @@ function normalizeJob(raw: unknown, fallbackCompany: string, warnings: string[],
   const companyField = raw.companyName ?? raw.company
   const publishedRaw = raw.publishedAt
   const publishedAt = coerceIsoDate(publishedRaw)
-  if (publishedRaw && !publishedAt) warnings.push(`${label} : date de publication "${str(publishedRaw)}" illisible, ignorée.`)
+  if (str(publishedRaw) && !publishedAt) warnings.push(`${label} : date de publication "${str(publishedRaw)}" illisible, ignorée.`)
   return {
     companyName: (isObj(companyField) ? str(companyField.name) : str(companyField)) || fallbackCompany,
     title,
     url,
     location: str(raw.location),
-    contractType: str(raw.contractType ?? raw.type),
+    contractType: normalizeContractType(str(raw.contractType ?? raw.type)),
     description: str(raw.description),
     requirements: strList(raw.requirements),
     skills: strList(raw.skills),
     salary: str(raw.salary),
     publishedAt,
     source: str(raw.source),
+    startDate: str(raw.startDate),
+    duration: str(raw.duration),
+    rhythm: str(raw.rhythm),
+    studyLevel: str(raw.studyLevel ?? raw.level),
+    matchScore: score(raw.matchScore, warnings, label),
+    matchReasons: strList(raw.matchReasons),
+    verifiedAt: coerceIsoDate(raw.verifiedAt),
+    availability: availability(raw.availability ?? raw.status),
     analysis: normalizeAnalysis(raw.analysis, warnings, label),
     coverLetters: normalizeLetters(raw.coverLetters),
   }
@@ -237,8 +286,11 @@ export function parseClaudeText(text: string): ParseResult {
 
   const merged: Obj = {}
   for (const v of values) {
-    if (isObj(v) && KNOWN_KEYS.some((k) => k in v)) mergeCandidate(merged, v)
-    else if (Array.isArray(v)) mergeCandidate(merged, { jobs: v })
+    if (Array.isArray(v)) mergeCandidate(merged, { jobs: v })
+    else if (!isObj(v) || !KNOWN_KEYS.some((k) => k in v)) continue
+    // Une entreprise isolée ({ "name": …, "jobs": [...] }), récupérée d'une réponse tronquée : ses offres gardent leur entreprise.
+    else if (typeof v.name === 'string' && Array.isArray(v.jobs) && !('companies' in v) && !('job' in v)) mergeCandidate(merged, { companies: [v] })
+    else mergeCandidate(merged, v)
   }
   if (!Object.keys(merged).length) {
     return { ok: false, error: `JSON valide, mais aucune clé attendue (${KNOWN_KEYS.join(', ')}). Ce n'est pas un résultat au format de l'application.` }

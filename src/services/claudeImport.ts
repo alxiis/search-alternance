@@ -1,8 +1,8 @@
 import type { Company, JobOffer } from '../types'
 import { emptyCompany, emptyJob } from '../lib/factories'
-import { findCompanyByName, findDuplicateJob, type DuplicateReason } from '../utils/dedupe'
+import { companyKey, findCompanyByName, findDuplicateJob, type DuplicateReason } from '../utils/dedupe'
 import { nowIso, today } from '../utils/dates'
-import { normalizeText, unique } from '../utils/text'
+import { unique } from '../utils/text'
 import type { ParsedPayload, RawCompany, RawJob } from './claudeParser'
 
 export interface CompanyImportItem {
@@ -39,6 +39,10 @@ export interface ImportResult {
   updated: { companies: number; jobs: number }
 }
 
+const blankCompany = (name: string): RawCompany => ({
+  name, sector: '', location: '', website: '', careersUrl: '', description: '', compatibilityReasons: [], sources: [], notes: '',
+})
+
 const blankJob = (companyName: string, patch: Partial<RawJob>): RawJob => ({
   companyName,
   title: '',
@@ -51,6 +55,14 @@ const blankJob = (companyName: string, patch: Partial<RawJob>): RawJob => ({
   salary: '',
   publishedAt: null,
   source: '',
+  startDate: '',
+  duration: '',
+  rhythm: '',
+  studyLevel: '',
+  matchScore: null,
+  matchReasons: [],
+  verifiedAt: null,
+  availability: '',
   analysis: null,
   coverLetters: null,
   ...patch,
@@ -59,12 +71,10 @@ const blankJob = (companyName: string, patch: Partial<RawJob>): RawJob => ({
 export function buildImportPlan(payload: ParsedPayload, ctx: ImportContext): ImportItem[] {
   const items: ImportItem[] = []
   const known = new Map<string, RawCompany>()
-  for (const c of payload.companies) known.set(normalizeText(c.name), c)
+  for (const c of payload.companies) known.set(companyKey(c.name), c)
   for (const j of payload.jobs) {
-    const k = normalizeText(j.companyName)
-    if (k && !known.has(k)) {
-      known.set(k, { name: j.companyName, sector: '', location: '', website: '', careersUrl: '', description: '', compatibilityReasons: [], sources: [], notes: '' })
-    }
+    const k = companyKey(j.companyName)
+    if (k && !known.has(k)) known.set(k, blankCompany(j.companyName))
   }
   known.forEach((raw, k) => {
     const existing = findCompanyByName(raw.name, ctx.companies)
@@ -117,7 +127,12 @@ function mergeCompany(base: Company, raw: RawCompany): Company {
 
 function mergeJob(base: JobOffer, raw: RawJob, companyId: string | null): JobOffer {
   const analysis = raw.analysis ?? base.analysis
-  const score = raw.analysis?.compatibilityScore ?? base.compatibilityScore
+  // Priorité au score d'une analyse détaillée ; l'estimation d'une recherche ne sert que s'il n'y a rien d'autre.
+  const score = raw.analysis?.compatibilityScore ?? base.compatibilityScore ?? (analysis ? null : raw.matchScore)
+  const analysed = raw.analysis !== null && raw.analysis.compatibilityScore !== null
+  // Une vérification plus récente remplace l'ancienne ; un état sans date est daté du jour de l'import.
+  const verifiedAt = raw.verifiedAt ?? (raw.availability ? today() : null)
+  const fresher = verifiedAt !== null && (base.verifiedAt === null || verifiedAt >= base.verifiedAt)
   return {
     ...base,
     companyId: base.companyId ?? companyId,
@@ -128,13 +143,20 @@ function mergeJob(base: JobOffer, raw: RawJob, companyId: string | null): JobOff
     description: fill(base.description, raw.description),
     salary: fill(base.salary, raw.salary),
     source: fill(base.source, raw.source),
+    startDate: fill(base.startDate, raw.startDate),
+    duration: fill(base.duration, raw.duration),
+    rhythm: fill(base.rhythm, raw.rhythm),
+    studyLevel: fill(base.studyLevel, raw.studyLevel),
+    matchReasons: base.matchReasons.length ? base.matchReasons : raw.matchReasons,
+    verifiedAt: fresher ? verifiedAt : base.verifiedAt,
+    availability: fresher && raw.availability ? raw.availability : base.availability,
     publishedAt: base.publishedAt ?? raw.publishedAt,
     requirements: base.requirements.length ? base.requirements : raw.requirements,
     skills: unique([...base.skills, ...raw.skills]),
     analysis,
     compatibilityScore: score,
     coverLetters: raw.coverLetters ?? base.coverLetters,
-    status: base.status === 'to_analyze' && score !== null ? 'to_apply' : base.status,
+    status: base.status === 'to_analyze' && analysed ? 'to_apply' : base.status,
     lastActionAt: today(),
     updatedAt: nowIso(),
   }
@@ -153,11 +175,11 @@ export function applyImportPlan(items: ImportItem[], ctx: ImportContext): Import
   const result: ImportResult = { companies: [], jobs: [], created: { companies: 0, jobs: 0 }, updated: { companies: 0, jobs: 0 } }
 
   const rawByName = new Map<string, RawCompany>()
-  for (const it of items) if (it.kind === 'company') rawByName.set(normalizeText(it.raw.name), it.raw)
+  for (const it of items) if (it.kind === 'company') rawByName.set(companyKey(it.raw.name), it.raw)
 
   const ensureCompany = (name: string, count: boolean): string | null => {
     if (!name.trim()) return null
-    const raw = rawByName.get(normalizeText(name)) ?? { name, sector: '', location: '', website: '', careersUrl: '', description: '', compatibilityReasons: [], sources: [], notes: '' }
+    const raw = rawByName.get(companyKey(name)) ?? blankCompany(name)
     const existing = findCompanyByName(name, [...companies.values()])
     if (existing) {
       if (count && !touchedCompanies.has(existing.id)) result.updated.companies++

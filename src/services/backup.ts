@@ -1,6 +1,6 @@
 import { STATUS_META } from '../data/constants'
 import type { AppData, BackupFile, StoredFile } from '../types'
-import { emptyApplication, emptyProfile, emptySettings } from '../lib/factories'
+import { emptyProfile, emptySettings, hydrateCompany, hydrateCriteria, hydrateJob } from '../lib/factories'
 import { toCsv } from '../utils/csv'
 import { today } from '../utils/dates'
 
@@ -59,23 +59,26 @@ export function parseBackup(text: string): AppData {
   return {
     profile: { ...emptyProfile(), ...b.profile },
     settings: { ...emptySettings(), ...b.settings },
-    criteria: b.criteria,
-    companies: b.companies,
-    jobs: b.jobs.map((j) => ({ ...j, application: { ...emptyApplication(), ...j.application } })),
+    criteria: b.criteria.map(hydrateCriteria),
+    companies: b.companies.map(hydrateCompany),
+    jobs: b.jobs.map(hydrateJob),
     files,
   }
 }
 
+const AVAILABILITY_CSV = { open: 'En ligne', expired: 'Expirée', doubtful: 'Douteuse' } as const
+
 export function applicationsToCsv(data: AppData): string {
   const names = new Map(data.companies.map((c) => [c.id, c.name]))
   const header = [
-    'Entreprise', 'Poste', 'Localisation', 'Type', 'URL', 'Statut', 'Score', 'Date de découverte', 'Date de publication',
+    'Entreprise', 'Poste', 'Localisation', 'Type', 'Début', 'Durée', 'Rythme', 'Niveau', 'URL', 'État de l’annonce', 'Statut', 'Score', 'Date de découverte', 'Date de publication',
     'Date de candidature', 'Prochaine relance', 'Date d’entretien', 'Dernier contact', 'Prochaine action',
     'Contact', 'Email', 'Téléphone', 'LinkedIn contact', 'Réponse', 'Notes',
   ]
   const rows = data.jobs.map((j) => [
     j.companyId ? (names.get(j.companyId) ?? '') : '',
-    j.title, j.location, j.contractType, j.url, STATUS_META[j.status].label,
+    j.title, j.location, j.contractType, j.startDate, j.duration, j.rhythm, j.studyLevel, j.url,
+    j.availability ? AVAILABILITY_CSV[j.availability] : '', STATUS_META[j.status].label,
     j.compatibilityScore === null ? '' : String(j.compatibilityScore),
     j.discoveredAt, j.publishedAt ?? '', j.application.appliedAt ?? '', j.application.followUpDate ?? '',
     j.application.interviewDate ?? '', j.application.lastContactAt ?? '', j.application.nextAction,

@@ -5,7 +5,7 @@ import { formatShortDate, today } from '../utils/dates'
 import type { SortDir, SortKey } from '../utils/jobFilters'
 import { cn } from '../utils/text'
 import { offerSearchUrl } from '../utils/url'
-import { ScoreBadge } from './ScoreBadge'
+import { AvailabilityBadge, ScoreBadge } from './ScoreBadge'
 import { StatusSelect } from './StatusSelect'
 
 interface Props {
@@ -67,12 +67,13 @@ export function JobTable({ jobs, companies, sortKey, sortDir, onSort }: Props) {
                 <button className="text-left font-medium text-accent-foreground hover:underline" onClick={() => openJob(j.id)}>
                   {j.title || 'Offre sans titre'}
                 </button>
+                <AvailabilityBadge availability={j.availability} verifiedAt={j.verifiedAt} className="mt-1 block w-fit" />
               </td>
               <td className="px-3 py-2.5 text-muted-foreground">{j.location || '—'}</td>
               <td className="px-3 py-2.5 text-muted-foreground">{j.contractType || '—'}</td>
               <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">{formatShortDate(j.discoveredAt)}</td>
               <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">{formatShortDate(j.publishedAt)}</td>
-              <td className="px-3 py-2.5"><ScoreBadge score={j.compatibilityScore} /></td>
+              <td className="px-3 py-2.5"><ScoreBadge score={j.compatibilityScore} estimated={!j.analysis} /></td>
               <td className="px-3 py-2.5"><StatusSelect job={j} /></td>
               <td className="px-3 py-2.5">
                 {j.url ? (

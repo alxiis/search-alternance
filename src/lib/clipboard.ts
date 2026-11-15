@@ -1,3 +1,6 @@
+import { DEFAULT_CLAUDE_URL } from '../data/constants'
+import { isHttpUrl } from '../utils/url'
+
 export async function copyText(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text)
@@ -20,6 +23,7 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export function openExternal(url: string): void {
-  window.open(url, '_blank', 'noopener,noreferrer')
+/** Ouvre un onglet. Une adresse enregistrée qui n'est pas http(s) (réglage vide, sauvegarde modifiée…) est remplacée par `fallback`. */
+export function openExternal(url: string, fallback = DEFAULT_CLAUDE_URL): void {
+  window.open(isHttpUrl(url) ? url.trim() : fallback, '_blank', 'noopener,noreferrer')
 }

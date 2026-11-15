@@ -78,4 +78,14 @@ export const db = {
       for (const s of stores) tx.objectStore(s).clear()
     })
   },
+  /** Vide puis remplit tous les stores dans une transaction unique (tout ou rien). */
+  async replaceAll(content: Record<StoreName, Array<{ id: string }>>): Promise<void> {
+    await run(STORE_NAMES, 'readwrite', (tx) => {
+      for (const name of STORE_NAMES) {
+        const os = tx.objectStore(name)
+        os.clear()
+        for (const v of content[name]) os.put(v)
+      }
+    })
+  },
 }
