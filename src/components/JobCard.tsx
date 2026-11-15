@@ -3,7 +3,7 @@ import { useUi } from '../hooks/useUi'
 import type { JobOffer } from '../types'
 import { formatShortDate } from '../utils/dates'
 import { offerSearchUrl } from '../utils/url'
-import { ScoreBadge } from './ScoreBadge'
+import { AvailabilityBadge, ScoreBadge } from './ScoreBadge'
 import { StatusSelect } from './StatusSelect'
 
 interface Props {
@@ -22,10 +22,14 @@ export function JobCard({ job, companyName }: Props) {
             {job.title || 'Offre sans titre'}
           </button>
         </div>
-        <ScoreBadge score={job.compatibilityScore} />
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <ScoreBadge score={job.compatibilityScore} estimated={!job.analysis} />
+          <AvailabilityBadge availability={job.availability} verifiedAt={job.verifiedAt} />
+        </div>
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         {job.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden />{job.location}</span>}
+        {job.startDate && <span>Début : {job.startDate}</span>}
         <span>Ajoutée le {formatShortDate(job.discoveredAt)}</span>
         {job.application.followUpDate && <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" aria-hidden />Relance {formatShortDate(job.application.followUpDate)}</span>}
       </div>

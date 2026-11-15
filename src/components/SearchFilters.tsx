@@ -17,7 +17,7 @@ export function SearchFilters({ filters, companies, onChange }: Props) {
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative min-w-[14rem] flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-        <input className="input pl-9" type="search" placeholder="Rechercher (entreprise, poste, lieu, notes…)" value={filters.query} onChange={(e) => set('query', e.target.value)} aria-label="Rechercher dans les offres" />
+        <input className="input pl-9" type="search" placeholder="Rechercher (entreprise, poste, lieu, compétence, description…)" value={filters.query} onChange={(e) => set('query', e.target.value)} aria-label="Rechercher dans les offres" />
       </div>
       <select className="input w-auto" value={filters.status} onChange={(e) => set('status', e.target.value as JobStatus | '')} aria-label="Filtrer par statut">
         <option value="">Tous les statuts</option>
@@ -38,6 +38,10 @@ export function SearchFilters({ filters, companies, onChange }: Props) {
       <label className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
         <input type="checkbox" className="h-4 w-4 rounded border-input accent-[var(--primary)]" checked={filters.followUpDue} onChange={(e) => set('followUpDue', e.target.checked)} />
         Relances dues
+      </label>
+      <label className="flex items-center gap-2 px-1 text-sm text-muted-foreground" title="Masque les annonces que la dernière vérification a trouvées expirées ou douteuses">
+        <input type="checkbox" className="h-4 w-4 rounded border-input accent-[var(--primary)]" checked={filters.hideExpired} onChange={(e) => set('hideExpired', e.target.checked)} />
+        Masquer les expirées
       </label>
       {hasActiveFilters(filters) && (
         <button className="btn-ghost btn-sm" onClick={() => onChange(NO_FILTERS)}><X className="h-3.5 w-3.5" aria-hidden /> Réinitialiser</button>

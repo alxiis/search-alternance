@@ -51,6 +51,11 @@ export function emptyCriteria(name = 'Nouvelle recherche'): SearchCriteria {
     availabilityDate: '',
     requiredTech: [],
     preferredTech: [],
+    rhythm: '',
+    contractDuration: '',
+    sectors: [],
+    excludedKeywords: [],
+    maxAgeDays: 30,
     updatedAt: nowIso(),
   }
 }
@@ -119,6 +124,13 @@ export function emptyJob(url = ''): JobOffer {
     salary: '',
     publishedAt: null,
     source: '',
+    startDate: '',
+    duration: '',
+    rhythm: '',
+    studyLevel: '',
+    matchReasons: [],
+    verifiedAt: null,
+    availability: '',
     discoveredAt: today(),
     status: 'to_analyze',
     notes: '',
@@ -130,4 +142,26 @@ export function emptyJob(url = ''): JobOffer {
     createdAt: now,
     updatedAt: now,
   }
+}
+
+/*
+ * Hydratation : un enregistrement créé par une version antérieure (IndexedDB ou sauvegarde JSON)
+ * n'a pas les champs ajoutés depuis. On les complète avec les valeurs par défaut, sans toucher au reste.
+ */
+export function hydrateJob(j: JobOffer): JobOffer {
+  const base = emptyJob()
+  return {
+    ...base,
+    ...j,
+    application: { ...base.application, ...j.application, contact: { ...base.application.contact, ...j.application?.contact } },
+  }
+}
+
+export function hydrateCriteria(c: SearchCriteria): SearchCriteria {
+  // Une recherche antérieure à `maxAgeDays` n'avait aucune limite d'ancienneté : on conserve ce comportement.
+  return { ...emptyCriteria(), ...c, maxAgeDays: c.maxAgeDays ?? 0 }
+}
+
+export function hydrateCompany(c: Company): Company {
+  return { ...emptyCompany(c.name ?? ''), ...c }
 }

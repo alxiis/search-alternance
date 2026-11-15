@@ -22,11 +22,38 @@ export const DUPLICATE_REASON_LABEL: Record<DuplicateReason, string> = {
   companyTitleLocation: 'Même entreprise, intitulé et lieu',
 }
 
-function triple(companyName: string, title: string, location: string): string | null {
-  const c = normalizeText(companyName)
-  const t = normalizeText(title)
-  if (!c || !t) return null
-  return `${c}|${t}|${normalizeText(location)}`
+const LEGAL_FORMS = /\b(sas|sasu|sa|sarl|eurl|snc|gmbh|ltd|inc|llc|plc|groupe|group)\b/g
+
+/** Clé de comparaison d'une entreprise : « Groupe Nébula SAS » et « Nebula » désignent la même. */
+export function companyKey(name: string): string {
+  const n = normalizeText(name)
+  return n.replace(LEGAL_FORMS, ' ').replace(/\s+/g, ' ').trim() || n
+}
+
+/** Clé d'un intitulé : sans mention de genre — « (H/F) », « F/H », « alternant(e) », « développeur·euse ». */
+export function titleKey(title: string): string {
+  return normalizeText(
+    title
+      .replace(/\b[hfmx](\s*[/-]\s*[hfmx]){1,2}\b/gi, ' ')
+      .replace(/\(\s*(e|ne|se|euse|trice|rice|ère)\s*\)/gi, '')
+      .replace(/[·•]\p{L}+/gu, ''),
+  )
+}
+
+/** Mots significatifs d'un lieu : « Toulouse (31) », « 31000 Toulouse » et « Toulouse, France » donnent tous « toulouse ». */
+function locationWords(location: string): string[] {
+  return normalizeText(location)
+    .split(' ')
+    .filter((w) => w && !/^\d+$/.test(w) && w !== 'france' && w !== 'cedex')
+}
+
+/** Deux lieux sont compatibles si l'un est inconnu ou si l'un précise l'autre (« Toulouse » / « Toulouse, Occitanie »). */
+function sameLocation(a: string, b: string): boolean {
+  const wa = locationWords(a)
+  const wb = locationWords(b)
+  if (!wa.length || !wb.length) return true
+  const [small, large] = wa.length <= wb.length ? [wa, wb] : [wb, wa]
+  return small.every((w) => large.includes(w))
 }
 
 /** Détection par priorité : URL exacte, URL nettoyée, puis entreprise + intitulé + lieu. */
@@ -43,17 +70,21 @@ export function findDuplicateJob(
     const byClean = jobs.find((j) => j.url && cleanUrl(j.url) === cleaned)
     if (byClean) return { job: byClean, reason: 'cleanUrl' }
   }
-  const key = triple(candidate.companyName, candidate.title, candidate.location)
-  if (!key) return null
-  const nameById = new Map(companies.map((c) => [c.id, c.name]))
-  const byTriple = jobs.find((j) => {
-    const name = j.companyId ? (nameById.get(j.companyId) ?? '') : ''
-    return triple(name, j.title, j.location) === key
-  })
-  return byTriple ? { job: byTriple, reason: 'companyTitleLocation' } : null
+  const company = companyKey(candidate.companyName)
+  const title = titleKey(candidate.title)
+  if (!company || !title) return null
+  const keyById = new Map(companies.map((c) => [c.id, companyKey(c.name)]))
+  const byIdentity = jobs.find(
+    (j) =>
+      j.companyId !== null &&
+      keyById.get(j.companyId) === company &&
+      titleKey(j.title) === title &&
+      sameLocation(j.location, candidate.location),
+  )
+  return byIdentity ? { job: byIdentity, reason: 'companyTitleLocation' } : null
 }
 
 export function findCompanyByName(name: string, companies: Company[]): Company | undefined {
-  const n = normalizeText(name)
-  return n ? companies.find((c) => normalizeText(c.name) === n) : undefined
+  const key = companyKey(name)
+  return key ? companies.find((c) => companyKey(c.name) === key) : undefined
 }

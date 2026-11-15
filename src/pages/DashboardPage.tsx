@@ -9,6 +9,7 @@ import { SENT_STATUSES } from '../data/constants'
 import { useStore } from '../hooks/useStore'
 import { useToast } from '../hooks/useToast'
 import { useUi } from '../hooks/useUi'
+import type { JobStatus } from '../types'
 import { addDays, formatDate, mondayOf, today } from '../utils/dates'
 import { buildTasks } from '../utils/tasks'
 import { cn } from '../utils/text'
@@ -47,11 +48,11 @@ export function DashboardPage() {
   const names = new Map(companies.map((c) => [c.id, c.name]))
 
   const stats = useMemo(() => {
-    const count = (pred: (s: string) => boolean) => jobs.filter((j) => pred(j.status)).length
+    const count = (pred: (s: JobStatus) => boolean) => jobs.filter((j) => pred(j.status)).length
     return {
       total: jobs.length,
       toApply: count((s) => s === 'to_apply'),
-      sent: count((s) => SENT_STATUSES.includes(s as never)),
+      sent: count((s) => SENT_STATUSES.includes(s)),
       interviews: count((s) => s === 'interview' || s === 'second_interview'),
       rejected: count((s) => s === 'rejected'),
       accepted: count((s) => s === 'accepted'),
@@ -155,7 +156,7 @@ export function DashboardPage() {
                     <span className="block truncate text-sm font-medium text-foreground">{j.title || 'Offre'}</span>
                     <span className="text-xs text-muted-foreground">{names.get(j.companyId ?? '') ?? 'Entreprise inconnue'} · le {formatDate(j.application.appliedAt)}</span>
                   </span>
-                  <ScoreBadge score={j.compatibilityScore} />
+                  <ScoreBadge score={j.compatibilityScore} estimated={!j.analysis} />
                   <StatusBadge status={j.status} />
                 </button>
               </li>

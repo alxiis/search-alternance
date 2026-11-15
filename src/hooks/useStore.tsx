@@ -106,7 +106,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (existing) return existing
       const created = emptyCompany(trimmed)
       commit((d) => ({ ...d, companies: [...d.companies, created] }))
-      void persist(() => storage.saveCompanies([created]))
+      // L'échec est déjà signalé par `persist` ; on évite seulement un rejet de promesse non géré.
+      void persist(() => storage.saveCompanies([created])).catch(() => undefined)
       return created
     }
 

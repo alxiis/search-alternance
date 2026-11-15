@@ -1,9 +1,11 @@
 import type { Company, JobOffer, Profile } from '../types'
 import { buildPrompt } from './buildPrompt'
-import { companyToText, jobToText, profileToText } from './format'
+import { companyToText, jobToText, profileToText, todayText } from './format'
 import { ANALYSIS_SCHEMA, JSON_RULES, NO_INVENTION_RULES } from './schemas'
 
-export const ANALYZE_JOB_TEMPLATE = `Tu es mon conseiller en recherche d'alternance. Analyse la compatibilité entre mon profil et l'offre ci-dessous, puis recherche l'entreprise sur le web.
+export const ANALYZE_JOB_TEMPLATE = `Tu es mon conseiller en recherche d'alternance en France. Analyse la compatibilité entre mon profil et l'offre ci-dessous, puis recherche l'entreprise sur le web.
+
+Date du jour : {{today}}
 
 ## Mon profil
 {{profile}}
@@ -16,7 +18,7 @@ export const ANALYZE_JOB_TEMPLATE = `Tu es mon conseiller en recherche d'alterna
 
 ## Ta mission
 Ouvre l'URL de l'offre si elle est fournie (sinon base-toi sur les informations ci-dessus), puis :
-1. Analyse la compatibilité entre mon profil et l'offre.
+1. Analyse la compatibilité entre mon profil et l'offre, y compris les points propres à l'alternance : niveau d'études préparé, date de début, durée, rythme école / entreprise, lieu et trajet.
 2. Donne un score de compatibilité de 0 à 100.
 3. Explique ce score, critère par critère.
 4. Liste les correspondances (compétences, expériences, projets du profil qui répondent à l'offre).
@@ -27,7 +29,7 @@ Ouvre l'URL de l'offre si elle est fournie (sinon base-toi sur les informations 
 9. Recherche ses produits et services.
 10. Recherche ses projets et actualités récents.
 11. Recherche sa page recrutement.
-12. Recherche d'autres offres pertinentes de cette entreprise pour mon profil.
+12. Recherche d'autres offres pertinentes de cette entreprise pour mon profil, et vérifie au passage que l'offre analysée est toujours en ligne ("availability").
 13. Propose des arguments personnalisés pour ma candidature.
 14. Rédige une lettre de motivation personnalisée (voir ci-dessous).
 
@@ -48,7 +50,8 @@ Réponse structurée et lisible (une section par point ci-dessus), puis JSON str
 
 export function buildAnalyzeJobPrompt(profile: Profile, job: JobOffer, company: Company | undefined): string {
   return buildPrompt(ANALYZE_JOB_TEMPLATE, {
-    profile: profileToText(profile),
+    today: todayText(),
+    profile: profileToText(profile, { includeLetter: true }),
     job: jobToText(job, company),
     company: companyToText(company),
     rules: NO_INVENTION_RULES,

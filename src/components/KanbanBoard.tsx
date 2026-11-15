@@ -6,7 +6,7 @@ import { useUi } from '../hooks/useUi'
 import type { Company, JobOffer, JobStatus } from '../types'
 import { formatShortDate, today } from '../utils/dates'
 import { cn } from '../utils/text'
-import { ScoreBadge } from './ScoreBadge'
+import { AvailabilityBadge, ScoreBadge } from './ScoreBadge'
 
 /** « Relance à faire » n'a pas de colonne : ces offres restent visibles dans « Postulé ». */
 const columnOf = (status: JobStatus): JobStatus => (status === 'followup' ? 'applied' : status)
@@ -31,7 +31,8 @@ function KanbanCard({ job, companyName }: { job: JobOffer; companyName: string }
         {job.title || 'Offre sans titre'}
       </button>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <ScoreBadge score={job.compatibilityScore} />
+        <ScoreBadge score={job.compatibilityScore} estimated={!job.analysis} />
+        <AvailabilityBadge availability={job.availability} verifiedAt={job.verifiedAt} />
         <span>{formatShortDate(job.application.appliedAt ?? job.discoveredAt)}</span>
       </div>
       {follow && (

@@ -35,7 +35,7 @@ export const COVER_LETTER_TEMPLATE = `Tu es mon coach en candidature pour l'alte
 - Mets en avant les expériences, projets et compétences de mon profil qui répondent réellement à l'offre.
 - N'invente rien : aucune expérience, compétence, diplôme, chiffre ou information sur l'entreprise qui ne figure pas ci-dessus. Si une information manque, ne l'utilise pas (ou utilise [à compléter]).
 - Si tu as besoin d'un fait supplémentaire sur l'entreprise, cherche-le sur le web (source officielle) et cite la source.
-{{extra}}
+{{extra?}}
 
 ## Format de sortie
 Présente chaque contenu de façon lisible, puis termine par le JSON strict suivant.
@@ -55,7 +55,7 @@ export function buildCoverLetterPrompt(
 ): string {
   const selected = formats.length ? formats : (['full'] as LetterFormat[])
   return buildPrompt(COVER_LETTER_TEMPLATE, {
-    profile: profileToText(profile),
+    profile: profileToText(profile, { includeLetter: true }),
     job: jobToText(job, company),
     company: companyToText(company),
     analysis: analysisToText(job) || "Aucune analyse importée pour l'instant : appuie-toi sur le profil et l'offre.",

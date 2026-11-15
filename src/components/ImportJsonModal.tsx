@@ -8,7 +8,7 @@ import { parseClaudeText, type ParsedPayload } from '../services/claudeParser'
 import { DUPLICATE_REASON_LABEL } from '../utils/dedupe'
 import { cn } from '../utils/text'
 import { Modal } from './Modal'
-import { ScoreBadge } from './ScoreBadge'
+import { AvailabilityBadge, ScoreBadge } from './ScoreBadge'
 
 interface Props {
   targetJobId?: string
@@ -45,6 +45,8 @@ function ItemRow({ item, checked, onToggle }: { item: ImportItem; checked: boole
       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         {item.raw.analysis && <ScoreBadge score={item.raw.analysis.compatibilityScore} />}
         {item.raw.analysis && <span>analyse</span>}
+        {!item.raw.analysis && item.raw.matchScore !== null && <ScoreBadge score={item.raw.matchScore} estimated />}
+        <AvailabilityBadge availability={item.raw.availability} />
         {item.raw.coverLetters && <span>· lettre(s)</span>}
         {item.raw.publishedAt && <span>· publiée le {item.raw.publishedAt}</span>}
       </div>
@@ -74,12 +76,24 @@ export function ImportJsonModal({ targetJobId, onClose }: Props) {
   const [payload, setPayload] = useState<ParsedPayload | null>(null)
   const [selected, setSelected] = useState<Record<string, boolean>>({})
   const [busy, setBusy] = useState(false)
+  const [pickedTargetId, setPickedTargetId] = useState('')
   const fileInput = useRef<HTMLInputElement>(null)
 
+  // Une analyse ou une lettre sans offre doit être rattachée à une offre : celle de la fiche, sinon celle choisie ici.
+  const needsTarget = Boolean(payload && !targetJobId && (payload.loneAnalysis || payload.loneLetters))
+  const effectiveTargetId = targetJobId ?? (pickedTargetId || undefined)
   const targetJob = data.jobs.find((j) => j.id === targetJobId)
+  const names = useMemo(() => new Map(data.companies.map((c) => [c.id, c.name])), [data.companies])
+  const targetChoices = useMemo(
+    () =>
+      data.jobs
+        .map((j) => ({ id: j.id, label: [names.get(j.companyId ?? ''), j.title || j.url || 'Offre sans titre'].filter(Boolean).join(' — ') }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'fr')),
+    [data.jobs, names],
+  )
   const items = useMemo(
-    () => (payload ? buildImportPlan(payload, { companies: data.companies, jobs: data.jobs, targetJobId }) : []),
-    [payload, data.companies, data.jobs, targetJobId],
+    () => (payload ? buildImportPlan(payload, { companies: data.companies, jobs: data.jobs, targetJobId: effectiveTargetId }) : []),
+    [payload, data.companies, data.jobs, effectiveTargetId],
   )
   const chosen = items.filter((i) => selected[i.key] ?? true)
 
@@ -109,7 +123,7 @@ export function ImportJsonModal({ targetJobId, onClose }: Props) {
   const doImport = async () => {
     setBusy(true)
     try {
-      const result = await importResults(chosen, targetJobId)
+      const result = await importResults(chosen, effectiveTargetId)
       if (!result) {
         notify('Rien à importer.', 'info')
       } else {
@@ -143,7 +157,7 @@ export function ImportJsonModal({ targetJobId, onClose }: Props) {
     >
       {targetJob && (
         <p className="mb-3 rounded-lg bg-accent p-3 text-sm text-accent-foreground">
-          L'analyse sera rattachée à l'offre : <strong>{targetJob.title || targetJob.url}</strong>.
+          Le résultat (analyse, vérification ou lettre) sera rattaché à l'offre : <strong>{targetJob.title || targetJob.url}</strong>.
         </p>
       )}
       <label htmlFor="claude-json" className="label">Réponse de Claude ou bloc JSON</label>
@@ -184,6 +198,19 @@ export function ImportJsonModal({ targetJobId, onClose }: Props) {
         <div className="mt-5">
           <h3 className="text-sm font-semibold text-foreground">Aperçu avant import</h3>
           <p className="text-xs text-muted-foreground">Décochez ce que vous ne voulez pas importer. Les doublons complètent l'existant sans écraser vos statuts ni vos notes.</p>
+          {needsTarget && (
+            <div className="mt-3 rounded-lg border border-warning/30 bg-warning-soft p-3 text-sm text-warning-soft-foreground">
+              <label htmlFor="import-target" className="font-medium">Cette réponse contient une analyse ou une lettre sans offre. À quelle offre la rattacher ?</label>
+              {targetChoices.length ? (
+                <select id="import-target" className="input mt-2" value={pickedTargetId} onChange={(e) => setPickedTargetId(e.target.value)}>
+                  <option value="">— Choisir une offre —</option>
+                  {targetChoices.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+              ) : (
+                <p className="mt-1 text-xs">Aucune offre enregistrée : ajoutez d'abord l'offre concernée, puis importez depuis sa fiche.</p>
+              )}
+            </div>
+          )}
           {payload.warnings.length > 0 && (
             <ul className="mt-3 list-disc space-y-0.5 rounded-lg bg-warning-soft p-3 pl-7 text-xs text-warning-soft-foreground">
               {payload.warnings.map((w) => <li key={w}>{w}</li>)}
