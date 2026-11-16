@@ -1,4 +1,4 @@
-import { Briefcase, Building2, CheckCheck, Database, KanbanSquare, LayoutDashboard, Lock, Search, SlidersHorizontal, UserRound, type LucideIcon } from 'lucide-react'
+import { Briefcase, Building2, CheckCheck, Database, KanbanSquare, LayoutDashboard, Lock, Search, SlidersHorizontal, Target, UserRound, type LucideIcon } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { cn } from '../utils/text'
 
@@ -27,6 +27,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: 'Recherche',
     items: [
       { to: '/recherche', label: 'Recherche Claude', icon: Search },
+      { to: '/prospection', label: 'Prospection', icon: Target },
       { to: '/criteres', label: 'Critères de recherche', icon: SlidersHorizontal },
     ],
   },

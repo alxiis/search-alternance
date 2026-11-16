@@ -67,7 +67,7 @@ export function JobTable({ jobs, companies, sortKey, sortDir, onSort }: Props) {
                 <button className="text-left font-medium text-accent-foreground hover:underline" onClick={() => openJob(j.id)}>
                   {j.title || 'Offre sans titre'}
                 </button>
-                <AvailabilityBadge availability={j.availability} verifiedAt={j.verifiedAt} className="mt-1 block w-fit" />
+                <AvailabilityBadge availability={j.availability} verifiedAt={j.verifiedAt} expiresAt={j.expiresAt} className="mt-1 block w-fit" />
               </td>
               <td className="px-3 py-2.5 text-muted-foreground">{j.location || '—'}</td>
               <td className="px-3 py-2.5 text-muted-foreground">{j.contractType || '—'}</td>

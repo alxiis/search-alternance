@@ -32,7 +32,7 @@ function KanbanCard({ job, companyName }: { job: JobOffer; companyName: string }
       </button>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <ScoreBadge score={job.compatibilityScore} estimated={!job.analysis} />
-        <AvailabilityBadge availability={job.availability} verifiedAt={job.verifiedAt} />
+        <AvailabilityBadge availability={job.availability} verifiedAt={job.verifiedAt} expiresAt={job.expiresAt} />
         <span>{formatShortDate(job.application.appliedAt ?? job.discoveredAt)}</span>
       </div>
       {follow && (

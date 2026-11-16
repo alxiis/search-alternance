@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { SENT_STATUSES } from '../data/constants'
 import type { Company, JobOffer } from '../types'
 import { formatDate } from '../utils/dates'
+import { ProspectStatusSelect } from './ProspectStatusSelect'
 
 function ExtLink({ url, label }: { url: string; label: string }) {
   if (!url) return <span className="text-muted-foreground">—</span>
@@ -22,10 +23,10 @@ export function CompanyTable({ companies, jobs }: { companies: Company[]; jobs: 
   return (
     <>
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[900px] text-sm">
+        <table className="w-full min-w-[1100px] text-sm">
           <thead className="border-b border-border bg-muted/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <tr>
-              {['Entreprise', 'Secteur', 'Lieu', 'Site', 'Recrutement', 'Offres', 'Candidatures', 'Dernière recherche', 'Notes'].map((h) => (
+              {['Entreprise', 'Prospection', 'Secteur', 'Lieu', 'Site', 'Recrutement', 'Contacts', 'Offres', 'Candidatures', 'Dernière recherche', 'Notes'].map((h) => (
                 <th key={h} scope="col" className="px-3 py-2.5 text-left">{h}</th>
               ))}
             </tr>
@@ -36,10 +37,12 @@ export function CompanyTable({ companies, jobs }: { companies: Company[]; jobs: 
               return (
                 <tr key={c.id} className="transition-colors hover:bg-muted/50">
                   <td className="px-3 py-2.5"><Link to={`/entreprises/${c.id}`} className="font-medium text-accent-foreground hover:underline">{c.name}</Link></td>
+                  <td className="px-3 py-2.5"><ProspectStatusSelect company={c} /></td>
                   <td className="px-3 py-2.5 text-muted-foreground">{c.sector || '—'}</td>
                   <td className="px-3 py-2.5 text-muted-foreground">{c.location || '—'}</td>
                   <td className="px-3 py-2.5"><ExtLink url={c.website} label="Site" /></td>
                   <td className="px-3 py-2.5"><ExtLink url={c.careersUrl} label="Carrières" /></td>
+                  <td className="px-3 py-2.5 tabular-nums">{c.contacts.length}</td>
                   <td className="px-3 py-2.5 tabular-nums">{offers}</td>
                   <td className="px-3 py-2.5 tabular-nums">{sent}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">{formatDate(c.lastSearchAt)}</td>
@@ -62,7 +65,8 @@ export function CompanyTable({ companies, jobs }: { companies: Company[]; jobs: 
                 {c.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden />{c.location}</span>}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                <span className="text-muted-foreground">{offers} offre{offers > 1 ? 's' : ''} · {sent} candidature{sent > 1 ? 's' : ''}</span>
+                <ProspectStatusSelect company={c} />
+                <span className="text-muted-foreground">{offers} offre{offers > 1 ? 's' : ''} · {sent} candidature{sent > 1 ? 's' : ''} · {c.contacts.length} contact{c.contacts.length > 1 ? 's' : ''}</span>
                 {c.website && <ExtLink url={c.website} label="Site" />}
                 {c.careersUrl && <ExtLink url={c.careersUrl} label="Carrières" />}
               </div>

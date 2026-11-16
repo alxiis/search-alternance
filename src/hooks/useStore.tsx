@@ -1,13 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { buildDemoData } from '../data/demo'
 import type {
-  Application, AppData, AppSettings, Company, JobOffer, JobStatus, Profile, SearchCriteria, StoredFile,
+  Application, AppData, AppSettings, Company, JobOffer, JobStatus, Profile, ProspectStatus, SearchCriteria, StoredFile,
 } from '../types'
 import { emptyCompany, emptyJob, emptyProfile, emptySettings } from '../lib/factories'
 import { loadAll, storage } from '../services/storage'
 import { applyImportPlan, type ImportItem, type ImportResult } from '../services/claudeImport'
 import { addDays, nowIso, today } from '../utils/dates'
+import { mergeContacts, type ContactInput } from '../utils/contacts'
 import { findCompanyByName, findDuplicateJob, type DuplicateMatch } from '../utils/dedupe'
+import { unique } from '../utils/text'
 import { useToast } from './useToast'
 
 export interface NewJobInput {
@@ -20,6 +22,17 @@ export interface NewJobInput {
   salary: string
   notes: string
   status: JobStatus
+}
+
+/** Entreprise repérée en prospection (registre officiel) à ajouter au suivi. */
+export interface ProspectInput {
+  name: string
+  siren: string
+  sector: string
+  location: string
+  size: string
+  contacts: ContactInput[]
+  source: string
 }
 
 export type AddJobResult = { ok: true; job: JobOffer } | { ok: false; duplicate: DuplicateMatch }
@@ -38,6 +51,11 @@ export interface Store {
   setJobStatus: (id: string, status: JobStatus) => Promise<void>
   deleteJob: (id: string) => Promise<void>
   saveCompany: (c: Company) => Promise<void>
+  /** Modifie quelques champs d'une entreprise sans écraser le reste (import ou autre onglet entre-temps). */
+  updateCompany: (id: string, patch: Partial<Company>) => Promise<void>
+  setProspectStatus: (id: string, status: ProspectStatus) => Promise<void>
+  /** Ajoute une entreprise à la prospection, ou complète celle déjà suivie (même SIREN ou même nom). */
+  addProspect: (input: ProspectInput) => Promise<{ company: Company; created: boolean }>
   deleteCompany: (id: string) => Promise<void>
   markCompanySearched: (id: string) => Promise<void>
   importResults: (items: ImportItem[], targetJobId?: string) => Promise<ImportResult | null>
@@ -117,6 +135,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const updated = { ...change(current), updatedAt: nowIso() }
       commit((d) => ({ ...d, jobs: upsert(d.jobs, updated) }))
       await persist(() => storage.saveJobs([updated]))
+    }
+
+    const patchCompany = async (id: string, change: (c: Company) => Company): Promise<void> => {
+      const current = dataRef.current.companies.find((c) => c.id === id)
+      if (!current) return
+      const updated = { ...change(current), updatedAt: nowIso() }
+      commit((d) => ({ ...d, companies: upsert(d.companies, updated) }))
+      await persist(() => storage.saveCompanies([updated]))
     }
 
     return {
@@ -219,6 +245,45 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await persist(() => storage.saveCompanies([company]))
       },
 
+      async updateCompany(id, patch) {
+        await patchCompany(id, (c) => ({ ...c, ...patch }))
+      },
+
+      async setProspectStatus(id, status) {
+        const days = dataRef.current.settings.followUpDays
+        await patchCompany(id, (c) => {
+          if (c.prospectStatus === status) return c
+          const next = { ...c, prospectStatus: status }
+          if (status === 'contacted') {
+            next.contactedAt = c.contactedAt ?? today()
+            next.followUpDate = c.followUpDate ?? addDays(today(), days)
+          }
+          if (status === 'followup') next.followUpDate = c.followUpDate ?? today()
+          return next
+        })
+      },
+
+      async addProspect(input) {
+        const { companies } = dataRef.current
+        const existing = (input.siren ? companies.find((c) => c.siren === input.siren) : undefined) ?? findCompanyByName(input.name, companies)
+        const base = existing ?? emptyCompany(input.name.trim())
+        const keep = (current: string, incoming: string) => (current.trim() ? current : incoming.trim())
+        const company: Company = {
+          ...base,
+          siren: keep(base.siren, input.siren),
+          sector: keep(base.sector, input.sector),
+          location: keep(base.location, input.location),
+          size: keep(base.size, input.size),
+          contacts: mergeContacts(base.contacts, input.contacts),
+          sources: unique([...base.sources, input.source]),
+          prospectStatus: base.prospectStatus === 'none' ? 'to_contact' : base.prospectStatus,
+          updatedAt: nowIso(),
+        }
+        commit((d) => ({ ...d, companies: upsert(d.companies, company) }))
+        await persist(() => storage.saveCompanies([company]))
+        return { company, created: !existing }
+      },
+
       async deleteCompany(id) {
         const detached = dataRef.current.jobs.filter((j) => j.companyId === id).map((j) => ({ ...j, companyId: null }))
         commit((d) => ({
@@ -233,8 +298,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
 
       async markCompanySearched(id) {
-        const company = dataRef.current.companies.find((c) => c.id === id)
-        if (company) await store.saveCompany({ ...company, lastSearchAt: today() })
+        await patchCompany(id, (c) => ({ ...c, lastSearchAt: today() }))
       },
 
       async importResults(items, targetJobId) {

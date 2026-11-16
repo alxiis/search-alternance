@@ -1,5 +1,6 @@
 import { ALL_STATUSES } from '../data/constants'
 import type { Company, JobOffer, JobStatus } from '../types'
+import { effectiveAvailability } from './availability'
 import { normalizeText } from './text'
 import { today } from './dates'
 import { hostOf } from './url'
@@ -34,7 +35,7 @@ export function filterJobs(jobs: JobOffer[], companies: Company[], f: JobFilters
     if (f.companyId && j.companyId !== f.companyId) return false
     if (f.minScore && (j.compatibilityScore ?? -1) < f.minScore) return false
     if (f.followUpDue && !(j.application.followUpDate && j.application.followUpDate <= now)) return false
-    if (f.hideExpired && (j.availability === 'expired' || j.availability === 'doubtful')) return false
+    if (f.hideExpired && ['expired', 'doubtful'].includes(effectiveAvailability(j))) return false
     if (!q) return true
     const haystack = normalizeText(
       [

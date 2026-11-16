@@ -17,6 +17,8 @@ export interface Profile {
   studyLevel: string
   city: string
   mobilityRadiusKm: number
+  /** École ou établissement : sert à retrouver d'anciens élèves dans une entreprise. */
+  school: string
   mainSearch: string
   contractType: string
   availability: string
@@ -73,6 +75,37 @@ export interface UsefulUrl {
   url: string
 }
 
+export type ContactChannel = 'email' | 'linkedin' | 'phone' | 'meeting' | 'other'
+
+/** Un échange avec un contact (date au format YYYY-MM-DD). */
+export interface ContactEvent {
+  id: string
+  date: string
+  channel: ContactChannel
+  note: string
+}
+
+/** Interlocuteur dans une entreprise : recruteur, responsable d'équipe, ancien élève, dirigeant… */
+export interface Contact {
+  id: string
+  name: string
+  role: string
+  email: string
+  phone: string
+  linkedin: string
+  /** D'où vient ce contact (LinkedIn, registre des entreprises, salon, recherche Claude…). */
+  source: string
+  notes: string
+  history: ContactEvent[]
+  createdAt: string
+}
+
+/**
+ * Avancement d'une candidature spontanée auprès d'une entreprise.
+ * 'none' : l'entreprise n'est suivie que pour ses offres.
+ */
+export type ProspectStatus = 'none' | 'to_contact' | 'contacted' | 'followup' | 'in_discussion' | 'closed'
+
 export interface Company {
   id: string
   name: string
@@ -85,6 +118,16 @@ export interface Company {
   sources: string[]
   usefulUrls: UsefulUrl[]
   notes: string
+  /** Numéro SIREN (9 chiffres), si l'entreprise vient du registre officiel. */
+  siren: string
+  /** Effectif, en clair (« 20 à 49 salariés »). */
+  size: string
+  contacts: Contact[]
+  prospectStatus: ProspectStatus
+  /** Date du premier contact spontané (YYYY-MM-DD). */
+  contactedAt: string | null
+  /** Date de relance de la candidature spontanée (YYYY-MM-DD). */
+  followUpDate: string | null
   lastSearchAt: string | null
   createdAt: string
   updatedAt: string
@@ -165,6 +208,8 @@ export interface JobOffer {
   studyLevel: string
   /** Raisons pour lesquelles l'offre a été retenue lors d'une recherche Claude. */
   matchReasons: string[]
+  /** Date limite annoncée par l'annonce (YYYY-MM-DD) : passée, l'offre est considérée comme expirée. */
+  expiresAt: string | null
   /** Date (YYYY-MM-DD) à laquelle Claude a confirmé l'état de l'annonce. */
   verifiedAt: string | null
   availability: JobAvailability
@@ -192,6 +237,8 @@ export type PromptKind =
   | 'similarCompanies'
   | 'analyzeJob'
   | 'coverLetter'
+  | 'findContacts'
+  | 'contactMessage'
 
 export interface PromptResult {
   kind: PromptKind
@@ -199,12 +246,18 @@ export interface PromptResult {
   text: string
   /** Offre visée : sert de cible à l'import du résultat. */
   jobId?: string
+  /** Entreprise visée : le résultat importé lui est rattaché même si Claude l'orthographie autrement. */
   companyId?: string
+  /** Vrai si la réponse est un texte à copier (message, e-mail) et non un JSON à importer. */
+  noImport?: boolean
 }
 
 export interface FollowUpTask {
-  jobId: string
-  kind: 'followup' | 'interview'
+  /** Offre concernée ; absent pour la relance d'une candidature spontanée. */
+  jobId?: string
+  /** Entreprise concernée par une relance de candidature spontanée. */
+  companyId?: string
+  kind: 'followup' | 'interview' | 'prospect'
   dueDate: string
   label: string
   overdue: boolean

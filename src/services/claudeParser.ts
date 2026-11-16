@@ -3,6 +3,7 @@ import { emptyAnalysis } from '../lib/factories'
 import { coerceIsoDate, nowIso } from '../utils/dates'
 import { normalizeContractType, normalizeText, unique } from '../utils/text'
 import { toSafeHttpUrl } from '../utils/url'
+import { isEmail, type ContactInput } from '../utils/contacts'
 
 export interface RawCompany {
   name: string
@@ -14,6 +15,7 @@ export interface RawCompany {
   compatibilityReasons: string[]
   sources: string[]
   notes: string
+  contacts: ContactInput[]
 }
 
 export interface RawJob {
@@ -35,6 +37,7 @@ export interface RawJob {
   /** Estimation rapide (0-100) donnée par une recherche, sans analyse détaillée. */
   matchScore: number | null
   matchReasons: string[]
+  expiresAt: string | null
   verifiedAt: string | null
   availability: JobAvailability
   analysis: ClaudeAnalysis | null
@@ -49,6 +52,8 @@ export interface ParsedPayload {
   loneLetters: CoverLetters | null
   /** Index de l'offre "singulière" (clé `job`) dans `jobs`, si présente. */
   primaryJobIndex: number | null
+  /** Vrai si la première entreprise vient de la clé singulière `company` : c'est elle que la réponse concerne. */
+  hasPrimaryCompany: boolean
   warnings: string[]
 }
 
@@ -206,6 +211,32 @@ function normalizeLetters(raw: unknown): CoverLetters | null {
   return letters.full || letters.short || letters.email || letters.linkedin ? letters : null
 }
 
+function normalizeContacts(raw: unknown, warnings: string[], label: string): ContactInput[] {
+  if (!Array.isArray(raw)) return []
+  const contacts: ContactInput[] = []
+  raw.forEach((rc, i) => {
+    if (!isObj(rc)) return
+    const emailRaw = str(rc.email)
+    const email = isEmail(emailRaw) ? emailRaw : ''
+    if (emailRaw && !email) warnings.push(`${label}.contacts[${i}] : adresse e-mail "${emailRaw.slice(0, 60)}" invalide, ignorée.`)
+    const name = str(rc.name ?? rc.fullName)
+    if (!name && !email) {
+      warnings.push(`${label}.contacts[${i}] : contact sans nom ni e-mail, ignoré.`)
+      return
+    }
+    contacts.push({
+      name: name || email,
+      role: str(rc.role ?? rc.title),
+      email,
+      phone: str(rc.phone),
+      linkedin: httpUrl(rc.linkedin, warnings, `${label}.contacts[${i}].linkedin`),
+      source: str(rc.source),
+      notes: str(rc.notes),
+    })
+  })
+  return contacts
+}
+
 function normalizeCompany(raw: unknown, warnings: string[], label: string): RawCompany | null {
   if (typeof raw === 'string' && raw.trim()) return normalizeCompany({ name: raw }, warnings, label)
   if (!isObj(raw)) return null
@@ -224,6 +255,7 @@ function normalizeCompany(raw: unknown, warnings: string[], label: string): RawC
     compatibilityReasons: strList(raw.compatibilityReasons),
     sources: strList(raw.sources),
     notes: str(raw.notes),
+    contacts: normalizeContacts(raw.contacts, warnings, label),
   }
 }
 
@@ -257,6 +289,7 @@ function normalizeJob(raw: unknown, fallbackCompany: string, warnings: string[],
     studyLevel: str(raw.studyLevel ?? raw.level),
     matchScore: score(raw.matchScore, warnings, label),
     matchReasons: strList(raw.matchReasons),
+    expiresAt: coerceIsoDate(raw.expiresAt ?? raw.validThrough),
     verifiedAt: coerceIsoDate(raw.verifiedAt),
     availability: availability(raw.availability ?? raw.status),
     analysis: normalizeAnalysis(raw.analysis, warnings, label),
@@ -345,5 +378,5 @@ export function parseClaudeText(text: string): ParseResult {
   if (!companies.length && !jobs.length && !loneAnalysis && !loneLetters) {
     return { ok: false, error: 'Le JSON est valide mais ne contient aucune entreprise, offre, analyse ou lettre exploitable.' }
   }
-  return { ok: true, payload: { companies, jobs, loneAnalysis, loneLetters, primaryJobIndex, warnings } }
+  return { ok: true, payload: { companies, jobs, loneAnalysis, loneLetters, primaryJobIndex, hasPrimaryCompany: singleCompany !== null, warnings } }
 }
