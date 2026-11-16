@@ -12,6 +12,8 @@ import { AvailabilityBadge, ScoreBadge } from './ScoreBadge'
 
 interface Props {
   targetJobId?: string
+  /** Entreprise depuis laquelle le prompt a été lancé (offres d'une entreprise, interlocuteurs). */
+  targetCompanyId?: string
   onClose: () => void
 }
 
@@ -29,8 +31,9 @@ function ItemRow({ item, checked, onToggle }: { item: ImportItem; checked: boole
 
   if (item.kind === 'company') {
     title = item.raw.name
-    subtitle = [item.raw.sector, item.raw.location].filter(Boolean).join(' · ') || 'Entreprise'
-    badge = existing ? <Badge tone="dup">Existe déjà · complétée</Badge> : <Badge tone="new">Nouvelle</Badge>
+    const contacts = item.raw.contacts.length
+    subtitle = [item.raw.sector, item.raw.location, contacts ? `${contacts} contact${contacts > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ') || 'Entreprise'
+    badge = item.isTarget ? <Badge tone="target">Entreprise ciblée · complétée</Badge> : existing ? <Badge tone="dup">Existe déjà · complétée</Badge> : <Badge tone="new">Nouvelle</Badge>
   } else {
     title = item.raw.title || item.raw.url || 'Offre'
     subtitle = [item.raw.companyName, item.raw.location, item.raw.contractType].filter(Boolean).join(' · ')
@@ -68,7 +71,7 @@ function ItemRow({ item, checked, onToggle }: { item: ImportItem; checked: boole
   )
 }
 
-export function ImportJsonModal({ targetJobId, onClose }: Props) {
+export function ImportJsonModal({ targetJobId, targetCompanyId, onClose }: Props) {
   const { data, importResults } = useStore()
   const { notify } = useToast()
   const [text, setText] = useState('')
@@ -92,8 +95,8 @@ export function ImportJsonModal({ targetJobId, onClose }: Props) {
     [data.jobs, names],
   )
   const items = useMemo(
-    () => (payload ? buildImportPlan(payload, { companies: data.companies, jobs: data.jobs, targetJobId: effectiveTargetId }) : []),
-    [payload, data.companies, data.jobs, effectiveTargetId],
+    () => (payload ? buildImportPlan(payload, { companies: data.companies, jobs: data.jobs, targetJobId: effectiveTargetId, targetCompanyId }) : []),
+    [payload, data.companies, data.jobs, effectiveTargetId, targetCompanyId],
   )
   const chosen = items.filter((i) => selected[i.key] ?? true)
 
@@ -128,7 +131,7 @@ export function ImportJsonModal({ targetJobId, onClose }: Props) {
         notify('Rien à importer.', 'info')
       } else {
         const { created, updated } = result
-        notify(`Import terminé : ${created.jobs} offre(s) ajoutée(s), ${updated.jobs} mise(s) à jour, ${created.companies} entreprise(s) ajoutée(s).`)
+        notify(`Import terminé : ${created.jobs} offre(s) ajoutée(s), ${updated.jobs} mise(s) à jour, ${created.companies} entreprise(s) ajoutée(s), ${updated.companies} complétée(s).`)
         onClose()
       }
     } catch {

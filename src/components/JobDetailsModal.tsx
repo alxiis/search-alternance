@@ -82,7 +82,9 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onVerify,
 
   if (!original || !draft) return null
 
-  const originalCompany = data.companies.find((c) => c.id === original.companyId)?.name ?? ''
+  const ownerCompany = data.companies.find((c) => c.id === original.companyId)
+  const originalCompany = ownerCompany?.name ?? ''
+  const companyContacts = ownerCompany?.contacts ?? []
   const dirty = JSON.stringify({ ...draft, updatedAt: '' }) !== JSON.stringify({ ...original, updatedAt: '' }) || companyName !== originalCompany
   const app = draft.application
   const set = <K extends keyof JobOffer>(key: K, value: JobOffer[K]) => setDraft({ ...draft, [key]: value })
@@ -128,7 +130,7 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onVerify,
       >
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <ScoreBadge score={draft.compatibilityScore} estimated={!draft.analysis} />
-          <AvailabilityBadge availability={draft.availability} verifiedAt={draft.verifiedAt} showOpen />
+          <AvailabilityBadge availability={draft.availability} verifiedAt={draft.verifiedAt} expiresAt={draft.expiresAt} showOpen />
           <span className="text-sm text-muted-foreground">{originalCompany || 'Entreprise inconnue'}</span>
           <div className="ml-auto flex flex-wrap gap-2">
             {draft.url ? (
@@ -182,6 +184,7 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onVerify,
             <datalist id="job-study-levels">{STUDY_LEVELS.map((l) => <option key={l} value={l} />)}</datalist>
             <TextField label="Date de publication" type="date" value={draft.publishedAt ?? ''} onChange={(v) => set('publishedAt', v || null)} />
             <TextField label="Date de découverte" type="date" value={draft.discoveredAt} onChange={(v) => set('discoveredAt', v || today())} />
+            <TextField label="Date limite de l'annonce" type="date" value={draft.expiresAt ?? ''} onChange={(v) => set('expiresAt', v || null)} hint="Passée cette date, l'offre est marquée comme expirée." />
             <SelectField
               label="État de l'annonce"
               value={draft.availability}
@@ -230,6 +233,19 @@ export function JobDetailsModal({ jobId, onClose, onAnalyze, onLetter, onVerify,
               <TextField label="Téléphone" type="tel" value={app.contact.phone} onChange={(v) => setContact({ phone: v })} />
               <TextField label="LinkedIn du recruteur" type="url" value={app.contact.linkedin} onChange={(v) => setContact({ linkedin: v })} />
             </div>
+            {companyContacts.length > 0 && (
+              <div>
+                <h4 className="mb-1.5 text-sm font-semibold text-foreground">Contacts déjà connus chez {originalCompany}</h4>
+                <ul className="space-y-1.5">
+                  {companyContacts.map((c) => (
+                    <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted px-3 py-2 text-sm">
+                      <span className="min-w-0 text-foreground">{c.name}{c.role ? <span className="text-muted-foreground"> · {c.role}</span> : null}</span>
+                      <button className="btn-secondary btn-sm" onClick={() => setContact({ name: c.name, email: c.email, phone: c.phone, linkedin: c.linkedin })}>Reprendre pour cette offre</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 

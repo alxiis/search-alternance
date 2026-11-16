@@ -30,6 +30,7 @@ export function ProfileForm() {
         <TextField label="Prénom" value={p.firstName} onChange={(v) => set('firstName', v)} />
         <TextField label="Nom" value={p.lastName} onChange={(v) => set('lastName', v)} />
         <TextField label="Formation" value={p.education} onChange={(v) => set('education', v)} placeholder="Ex. : Bachelor Développement web" />
+        <TextField label="École / établissement" value={p.school} onChange={(v) => set('school', v)} hint="Sert à retrouver d'anciens élèves dans les entreprises visées." />
         <SelectField label="Niveau d'études" value={p.studyLevel} onChange={(v) => set('studyLevel', v)} options={['', ...STUDY_LEVELS]} />
         <TextField label="Ville" value={p.city} onChange={(v) => set('city', v)} />
         <NumberField label="Rayon de mobilité (km)" value={p.mobilityRadiusKm} onChange={(v) => set('mobilityRadiusKm', v)} />

@@ -24,7 +24,7 @@ export function JobCard({ job, companyName }: Props) {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <ScoreBadge score={job.compatibilityScore} estimated={!job.analysis} />
-          <AvailabilityBadge availability={job.availability} verifiedAt={job.verifiedAt} />
+          <AvailabilityBadge availability={job.availability} verifiedAt={job.verifiedAt} expiresAt={job.expiresAt} />
         </div>
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">

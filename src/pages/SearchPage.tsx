@@ -1,6 +1,7 @@
 import { Building2, Briefcase, CopyPlus, ExternalLink, Globe, Import, ShieldCheck, Telescope, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { BookmarkletInstall } from '../components/BookmarkletInstall'
 import { CLOSED_STATUSES, DEFAULT_CLAUDE_URL } from '../data/constants'
 import { useStore } from '../hooks/useStore'
 import { useUi } from '../hooks/useUi'
@@ -213,7 +214,7 @@ export function SearchPage() {
               <h2 className="font-semibold text-foreground">Chercher directement sur les sites d'emploi</h2>
               <p className="mt-0.5 text-sm text-muted-foreground">
                 {what || where ? <>Recherche pré-remplie quand le site le permet : <strong className="font-medium text-foreground">{[what, where].filter(Boolean).join(' · ')}</strong>.</> : 'Renseignez un métier et une ville dans vos critères pour pré-remplir ces recherches.'}
-                {' '}Une offre vous plaît ? Copiez son adresse puis cliquez sur « Ajouter une offre ».
+                {' '}Une offre vous plaît ? Ajoutez-la en un clic avec le bouton de capture ci-dessous.
               </p>
             </div>
           </div>
@@ -226,6 +227,7 @@ export function SearchPage() {
               </li>
             ))}
           </ul>
+          <div className="mt-4"><BookmarkletInstall /></div>
         </section>
       </div>
     </div>

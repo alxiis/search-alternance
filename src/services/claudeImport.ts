@@ -3,6 +3,7 @@ import { emptyCompany, emptyJob } from '../lib/factories'
 import { companyKey, findCompanyByName, findDuplicateJob, type DuplicateReason } from '../utils/dedupe'
 import { nowIso, today } from '../utils/dates'
 import { unique } from '../utils/text'
+import { mergeContacts } from '../utils/contacts'
 import type { ParsedPayload, RawCompany, RawJob } from './claudeParser'
 
 export interface CompanyImportItem {
@@ -10,6 +11,8 @@ export interface CompanyImportItem {
   kind: 'company'
   raw: RawCompany
   existingId: string | null
+  /** Vrai si la correspondance vient de l'entreprise ciblée par le prompt, et non de son nom. */
+  isTarget: boolean
   selected: boolean
 }
 
@@ -30,6 +33,8 @@ export interface ImportContext {
   companies: Company[]
   jobs: JobOffer[]
   targetJobId?: string
+  /** Entreprise depuis laquelle le prompt a été lancé : la réponse lui est rattachée même sous un autre nom. */
+  targetCompanyId?: string
 }
 
 export interface ImportResult {
@@ -40,7 +45,7 @@ export interface ImportResult {
 }
 
 const blankCompany = (name: string): RawCompany => ({
-  name, sector: '', location: '', website: '', careersUrl: '', description: '', compatibilityReasons: [], sources: [], notes: '',
+  name, sector: '', location: '', website: '', careersUrl: '', description: '', compatibilityReasons: [], sources: [], notes: '', contacts: [],
 })
 
 const blankJob = (companyName: string, patch: Partial<RawJob>): RawJob => ({
@@ -61,6 +66,7 @@ const blankJob = (companyName: string, patch: Partial<RawJob>): RawJob => ({
   studyLevel: '',
   matchScore: null,
   matchReasons: [],
+  expiresAt: null,
   verifiedAt: null,
   availability: '',
   analysis: null,
@@ -76,9 +82,13 @@ export function buildImportPlan(payload: ParsedPayload, ctx: ImportContext): Imp
     const k = companyKey(j.companyName)
     if (k && !known.has(k)) known.set(k, blankCompany(j.companyName))
   }
+  // L'entreprise visée par le prompt : celle de la clé « company », ou la seule entreprise de la réponse.
+  const targetCompany = ctx.targetCompanyId ? ctx.companies.find((c) => c.id === ctx.targetCompanyId) : undefined
+  const primaryCompany = payload.hasPrimaryCompany || payload.companies.length === 1 ? payload.companies[0] : undefined
   known.forEach((raw, k) => {
-    const existing = findCompanyByName(raw.name, ctx.companies)
-    items.push({ key: `company:${k}`, kind: 'company', raw, existingId: existing?.id ?? null, selected: true })
+    const forced = targetCompany && raw === primaryCompany ? targetCompany : null
+    const existing = forced ?? findCompanyByName(raw.name, ctx.companies)
+    items.push({ key: `company:${k}`, kind: 'company', raw, existingId: existing?.id ?? null, isTarget: Boolean(forced), selected: true })
   })
 
   const jobs = [...payload.jobs]
@@ -119,6 +129,7 @@ function mergeCompany(base: Company, raw: RawCompany): Company {
     careersUrl: fill(base.careersUrl, raw.careersUrl),
     description: fill(base.description, raw.description),
     notes: fill(base.notes, raw.notes),
+    contacts: mergeContacts(base.contacts, raw.contacts),
     compatibilityReasons: unique([...base.compatibilityReasons, ...raw.compatibilityReasons]),
     sources: unique([...base.sources, ...raw.sources]),
     updatedAt: nowIso(),
@@ -148,6 +159,7 @@ function mergeJob(base: JobOffer, raw: RawJob, companyId: string | null): JobOff
     rhythm: fill(base.rhythm, raw.rhythm),
     studyLevel: fill(base.studyLevel, raw.studyLevel),
     matchReasons: base.matchReasons.length ? base.matchReasons : raw.matchReasons,
+    expiresAt: base.expiresAt ?? raw.expiresAt,
     verifiedAt: fresher ? verifiedAt : base.verifiedAt,
     availability: fresher && raw.availability ? raw.availability : base.availability,
     publishedAt: base.publishedAt ?? raw.publishedAt,
@@ -175,12 +187,19 @@ export function applyImportPlan(items: ImportItem[], ctx: ImportContext): Import
   const result: ImportResult = { companies: [], jobs: [], created: { companies: 0, jobs: 0 }, updated: { companies: 0, jobs: 0 } }
 
   const rawByName = new Map<string, RawCompany>()
-  for (const it of items) if (it.kind === 'company') rawByName.set(companyKey(it.raw.name), it.raw)
+  // Entreprises rattachées d'office à l'entreprise ciblée, quel que soit le nom donné par Claude.
+  const forcedByName = new Map<string, string>()
+  for (const it of items) {
+    if (it.kind !== 'company') continue
+    rawByName.set(companyKey(it.raw.name), it.raw)
+    if (it.isTarget && it.existingId) forcedByName.set(companyKey(it.raw.name), it.existingId)
+  }
 
   const ensureCompany = (name: string, count: boolean): string | null => {
     if (!name.trim()) return null
     const raw = rawByName.get(companyKey(name)) ?? blankCompany(name)
-    const existing = findCompanyByName(name, [...companies.values()])
+    const forcedId = forcedByName.get(companyKey(name))
+    const existing = (forcedId ? companies.get(forcedId) : undefined) ?? findCompanyByName(name, [...companies.values()])
     if (existing) {
       if (count && !touchedCompanies.has(existing.id)) result.updated.companies++
       companies.set(existing.id, mergeCompany(existing, raw))

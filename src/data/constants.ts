@@ -1,4 +1,4 @@
-import type { JobStatus, RemoteMode } from '../types'
+import type { ContactChannel, JobStatus, ProspectStatus, RemoteMode } from '../types'
 import { TONE_BADGE, TONE_DOT, type Tone } from './tones'
 
 export interface StatusMeta {
@@ -42,6 +42,29 @@ export const SENT_STATUSES: JobStatus[] = ['applied', 'followup', 'interview', '
 
 /** Statuts pour lesquels plus aucune relance n'est utile. */
 export const CLOSED_STATUSES: JobStatus[] = ['rejected', 'accepted', 'archived']
+
+/** Parcours d'une candidature spontanée auprès d'une entreprise. */
+export const PROSPECT_META: Record<ProspectStatus, StatusMeta> = {
+  none: meta('Hors prospection', 'neutral'),
+  to_contact: meta('À contacter', 'sky'),
+  contacted: meta('Contactée', 'violet'),
+  followup: meta('À relancer', 'amber'),
+  in_discussion: meta('Échange en cours', 'teal'),
+  closed: meta('Sans suite', 'rose'),
+}
+
+export const ALL_PROSPECT_STATUSES = Object.keys(PROSPECT_META) as ProspectStatus[]
+
+/** Statuts pour lesquels une relance de candidature spontanée a un sens. */
+export const PROSPECT_WAITING: ProspectStatus[] = ['contacted', 'followup']
+
+export const CHANNEL_LABELS: Record<ContactChannel, string> = {
+  email: 'E-mail',
+  linkedin: 'LinkedIn',
+  phone: 'Téléphone',
+  meeting: 'Rencontre',
+  other: 'Autre',
+}
 
 export const CONTRACT_TYPES = ['Alternance', 'Apprentissage', 'Contrat de professionnalisation', 'Stage', 'CDI', 'CDD', 'Autre']
 

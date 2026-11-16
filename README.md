@@ -2,6 +2,7 @@
 
 Application web **personnelle** pour préparer, organiser et suivre une recherche d'alternance.
 Elle fonctionne **entièrement dans le navigateur** : pas de serveur, pas d'API Claude, pas de clé, pas de base distante.
+Seule la page *Prospection* interroge un service extérieur (le registre public des entreprises), et uniquement quand vous lancez une recherche.
 Vous copiez des prompts dans **Claude Pro** (vous-même, à la main), puis vous réimportez les résultats en JSON.
 
 - React + TypeScript (strict) + Vite + Tailwind CSS 4 + lucide-react + React Router (`HashRouter`)
@@ -46,10 +47,16 @@ Le site est marqué `noindex`. Attention : une page GitHub Pages est **publique*
 4. Dans Claude Pro, collez le prompt dans une conversation où la recherche web est activée. Claude termine sa réponse par un bloc JSON.
 5. **Importer résultat Claude** (bouton en haut de page) : collez toute la réponse (le JSON est détecté automatiquement), ou le seul bloc JSON, ou chargez un fichier `.json`. Un aperçu permet de cocher ce qui est importé ; les doublons sont signalés.
 6. **Offres** : tableau avec recherche, filtres, tri, pagination. Le statut se change directement dans le tableau. **Kanban** : glissez-déposez entre colonnes (sauvegarde automatique).
-7. **Ajouter une offre** : collez l'URL, cliquez *Ajouter* (ou *Ajouter et analyser*). L'application n'essaie **jamais** de lire la page de l'offre.
+7. **Ajouter une offre**, de deux façons :
+   - **Bouton de capture** (le plus rapide) : dans *Recherche Claude*, glissez le bouton « Suivi Alternance » dans votre barre de favoris. Sur la page d'une offre, cliquez sur ce favori : l'offre s'ouvre dans l'application, déjà remplie (poste, entreprise, lieu, contrat, dates de publication et d'expiration, salaire, compétences, description). Vous confirmez, elle est ajoutée.
+   - **À la main** : collez l'URL, cliquez *Ajouter* (ou *Ajouter et analyser*).
+
+   L'application n'essaie **jamais** de lire elle-même la page d'une offre : le favori lui transmet ce que la page affiche déjà dans votre navigateur.
 8. **Analyser avec Claude** sur une offre → prompt (profil + offre + entreprise) → Claude renvoie analyse, score 0-100, lettre → *Importer le résultat* depuis la fiche : l'offre est mise à jour (score, explication, lettre).
 9. **Générer ma lettre** : choisissez les formats (lettre complète, courte, email, message LinkedIn) et copiez le prompt. Importez la réponse : les textes sont conservés dans l'onglet *Lettres* de l'offre.
-10. **Suivi** : dans la fiche d'une offre, onglet *Suivi* (dates, contact RH, prochaine action). Passer une offre en « Postulé » fixe la date de candidature et une relance (7 jours par défaut, réglable dans *Données*). Les relances en retard et les entretiens à venir apparaissent sur le tableau de bord.
+10. **Prospection** : cherchez dans le registre officiel les entreprises d'un secteur, d'une zone et d'une taille données, puis ajoutez celles qui vous intéressent. Chaque entreprise suit alors son propre parcours de candidature spontanée (*À contacter → Contactée → À relancer → Échange en cours / Sans suite*), avec une date de relance qui remonte sur le tableau de bord.
+11. **Contacts** : la fiche d'une entreprise tient un carnet de contacts (fonction, coordonnées, source, historique daté des échanges). Elle propose des recherches pré-remplies pour trouver un recruteur, le responsable de l'équipe ou un ancien de votre école, un prompt *Trouver des interlocuteurs* dont le résultat s'importe, et un prompt de message (candidature spontanée, prise de contact, relance, remerciement). Noter un premier échange fait passer l'entreprise en « Contactée ».
+12. **Suivi** : dans la fiche d'une offre, onglet *Suivi* (dates, contact RH, prochaine action). Passer une offre en « Postulé » fixe la date de candidature et une relance (7 jours par défaut, réglable dans *Données*). Les relances en retard et les entretiens à venir apparaissent sur le tableau de bord.
 
 Le score de compatibilité est **toujours fourni par Claude** puis importé ; l'application ne le calcule pas. Une recherche donne une **estimation rapide** par offre (affichée « ≈ 84/100 », bordure en pointillés) qui sert à trier les résultats ; l'analyse détaillée la remplace par le score définitif. Sans l'un ni l'autre, l'offre affiche « Non analysé ».
 
@@ -67,7 +74,9 @@ Le score de compatibilité est **toujours fourni par Claude** puis importé ; l'
 
 - Base IndexedDB `suivi-alternance` (stores : `profile`, `criteria`, `companies`, `jobs`, `files`, `settings`). Migrations versionnées dans `src/lib/db.ts`.
 - Sauvegarde automatique à chaque modification (formulaires : après ~0,7 s d'inactivité).
-- Aucun appel réseau vers un service tiers : les seuls liens sortants (bouton « Ouvrir Claude », dont l'adresse est modifiable dans *Recherche Claude*, liens vers les sites d'emploi, page d'une offre) ouvrent simplement un onglet quand vous cliquez.
+- Les liens sortants (bouton « Ouvrir Claude », dont l'adresse est modifiable dans *Recherche Claude*, liens vers les sites d'emploi, recherches de personnes, page d'une offre) ouvrent simplement un onglet quand vous cliquez.
+- **Un seul cas d'appel réseau** : la page *Prospection*. Quand vous cliquez sur *Chercher*, elle interroge deux API publiques de l'État, sans clé ni compte : l'API Géo (`geo.api.gouv.fr`) pour retrouver la commune, et l'API Recherche d'entreprises (`recherche-entreprises.api.gouv.fr`) pour le registre. Seuls la ville, le secteur (codes NAF), la taille et l'éventuel mot-clé saisis leur sont envoyés ; votre profil, vos offres et votre suivi ne quittent jamais le navigateur.
+- **Bouton de capture** : les données de l'offre passent du favori à l'application dans le fragment de l'adresse (après `#`), qui n'est envoyé à aucun serveur. L'adresse est nettoyée dès que l'offre est ajoutée ou refusée.
 - Vider les données du site dans le navigateur, ou changer de navigateur/appareil, fait perdre les données : **exportez régulièrement une sauvegarde** (page *Données*).
 
 ## Page « Données »
@@ -131,6 +140,24 @@ Les schémas exacts sont dans `src/prompts/schemas.ts` et visibles dans *Donnée
 
 **Lettres** : `{ "coverLetters": { "full": "", "short": "", "emailSubject": "", "email": "", "linkedin": "" } }`
 
+**Interlocuteurs**
+
+```json
+{
+  "schemaVersion": 1,
+  "company": {
+    "name": "", "website": "", "careersUrl": "", "notes": "", "sources": [],
+    "contacts": [
+      { "name": "", "role": "", "email": "", "phone": "", "linkedin": "", "source": "", "notes": "" }
+    ]
+  }
+}
+```
+
+Les contacts sont ajoutés à l'entreprise depuis laquelle le prompt a été lancé, même si Claude l'écrit autrement. Un contact déjà connu (même e-mail ou même nom) est complété, jamais dupliqué ; ses notes et son historique sont conservés. Une adresse e-mail mal formée est ignorée avec un avertissement.
+
+Une offre accepte aussi `"expiresAt"` (date limite annoncée, `YYYY-MM-DD`) : une fois dépassée, l'offre est marquée comme expirée sans attendre de vérification.
+
 ### Import et doublons
 
 - Le texte collé peut contenir du texte autour du JSON : les blocs ```` ```json ```` puis les accolades équilibrées sont recherchés.
@@ -149,6 +176,8 @@ Tous les prompts sont dans `src/prompts/` et se modifient facilement :
 | `searchCompanies.ts`, `searchJobs.ts`, `findCompanyJobs.ts`, `verifyJob.ts`, `similarCompanies.ts` | recherches |
 | `analyzeJob.ts` | analyse de compatibilité + entreprise + lettre |
 | `generateCoverLetter.ts` | lettre, version courte, email, LinkedIn |
+| `findContacts.ts` | recherche des interlocuteurs d'une entreprise (informations professionnelles publiées uniquement, aucune adresse devinée) |
+| `contactMessage.ts` | message à une personne : candidature spontanée, prise de contact, relance, remerciement (réponse en texte, sans JSON) |
 | `schemas.ts` | schémas JSON et règles communes (pas d'invention, sources, dates), et `SEARCH_METHOD` : la méthode de recherche d'alternance (vocabulaire à varier, sites à consulter, annonce d'origine, contrôles par offre) |
 | `format.ts` | conversion profil / critères / offre / entreprise en texte, liste de ce qui est déjà suivi, date du jour |
 
@@ -158,19 +187,26 @@ Tous les prompts sont dans `src/prompts/` et se modifient facilement :
 src/
   components/  Sidebar, Header, StatCard, JobTable, JobCard, KanbanBoard, CompanyTable, SearchFilters,
                ProfileForm, SearchCriteriaForm, PromptModal, ImportJsonModal, JobDetailsModal,
-               StatusBadge, ScoreBadge, EmptyState, ConfirmDialog, Toast, …
-  pages/       Dashboard, Profile, Criteria, Search, Jobs, Kanban, Companies, CompanyDetail, Data
+               StatusBadge, ScoreBadge, EmptyState, ConfirmDialog, Toast, ContactsSection,
+               ProspectStatusSelect, BookmarkletInstall, …
+  pages/       Dashboard, Profile, Criteria, Search, Prospection, Capture, Jobs, Kanban, Companies,
+               CompanyDetail, Data
   hooks/       useStore (état + persistance), useToast, useUi (modales globales), useAutosave
   lib/         db.ts (IndexedDB + migrations), factories.ts, clipboard.ts
-  services/    storage.ts, claudeParser.ts, claudeImport.ts, backup.ts
+  services/    storage.ts, claudeParser.ts, claudeImport.ts, backup.ts,
+               capture.ts (bouton de capture), companyDirectory.ts (registre des entreprises, API Géo)
   prompts/     modèles de prompts
   types/       Profile, SearchCriteria, Company, JobOffer, Application, ClaudeAnalysis, PromptResult,
                FollowUpTask, AppSettings, …
-  utils/       dates, url, dedupe, csv, tasks, jobFilters, jobBoards, text
-  data/        constantes (statuts…) et données de démonstration
+  utils/       dates, url, dedupe, csv, tasks, jobFilters, jobBoards, peopleSearch, contacts, availability, text
+  data/        constantes (statuts…), données de démonstration, et sectors.ts : secteurs proposés
+               en prospection (codes NAF) et tranches d'effectif
 ```
 
 ## Limites connues
 
 - Pas de lecture automatique des offres ni du PDF (choix volontaire : aucun scraping, aucun envoi).
+- Le bouton de capture dépend de ce que chaque site publie : la plupart des sites d'emploi fournissent des données d'offre structurées, mais pas tous. Sans elles, seuls le titre, l'adresse et le texte que vous aviez sélectionné sont repris. Il s'installe sur ordinateur (barre de favoris) et reste lié à l'adresse du site depuis lequel vous l'avez installé.
+- La prospection cherche par secteur d'activité officiel (code NAF) et par commune ou département, pas par rayon kilométrique ; la distance affichée est indicative. La taille est celle de l'entreprise entière, pas de l'établissement local.
+- Les recherches de personnes ouvrent LinkedIn ou Google : l'application ne lit pas les résultats, c'est à vous d'ajouter le contact retenu.
 - Les données sont liées à un navigateur : passez par l'export/import JSON pour changer d'appareil.

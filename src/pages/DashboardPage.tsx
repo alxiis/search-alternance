@@ -1,6 +1,6 @@
-import { Archive, Briefcase, CalendarClock, CheckCircle2, FlaskConical, MessagesSquare, Search, Send, UserRound, XCircle, type LucideIcon } from 'lucide-react'
+import { Archive, Briefcase, Building2, CalendarClock, CheckCircle2, FlaskConical, MessagesSquare, Search, Send, UserRound, XCircle, type LucideIcon } from 'lucide-react'
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { ScoreBadge } from '../components/ScoreBadge'
 import { StatCard } from '../components/StatCard'
@@ -44,6 +44,7 @@ export function DashboardPage() {
   const { data, loadDemo } = useStore()
   const { notify } = useToast()
   const { openJob, openImport, openAddJob } = useUi()
+  const navigate = useNavigate()
   const { jobs, companies, profile } = data
   const names = new Map(companies.map((c) => [c.id, c.name]))
 
@@ -63,7 +64,8 @@ export function DashboardPage() {
     () => jobs.filter((j) => j.application.appliedAt).sort((a, b) => (b.application.appliedAt ?? '').localeCompare(a.application.appliedAt ?? '')).slice(0, 5),
     [jobs],
   )
-  const tasks = useMemo(() => buildTasks(jobs).slice(0, 8), [jobs])
+  const tasks = useMemo(() => buildTasks(jobs, companies).slice(0, 8), [jobs, companies])
+  const toContact = companies.filter((c) => c.prospectStatus === 'to_contact').length
 
   const weekly = useMemo(() => {
     const start = mondayOf(addDays(today(), -7 * (WEEKS - 1)))
@@ -106,6 +108,8 @@ export function DashboardPage() {
         <Shortcut to="/recherche" icon={Search} label="Préparer une recherche" />
         <Shortcut icon={Briefcase} label="Ajouter une offre" onClick={() => openAddJob()} />
         <Shortcut icon={Archive} label="Importer résultat Claude" onClick={() => openImport()} />
+        <Shortcut to="/prospection" icon={Building2} label="Prospecter des entreprises" />
+        {toContact > 0 && <Shortcut to="/entreprises" icon={Send} label={`${toContact} entreprise${toContact > 1 ? 's' : ''} à contacter`} />}
         <Shortcut to="/profil" icon={UserRound} label="Mon profil" />
       </section>
 
@@ -117,6 +121,23 @@ export function DashboardPage() {
           ) : (
             <ul className="divide-y divide-border">
               {tasks.map((t) => {
+                if (t.kind === 'prospect') {
+                  const company = companies.find((c) => c.id === t.companyId)
+                  if (!company) return null
+                  return (
+                    <li key={`${company.id}-prospect`}>
+                      <button className="flex w-full items-center gap-3 py-2.5 text-left hover:bg-muted" onClick={() => navigate(`/entreprises/${company.id}`)}>
+                        <span className={cn('w-24 shrink-0 text-xs font-medium', t.overdue ? 'text-danger' : 'text-muted-foreground')}>
+                          {formatDate(t.dueDate).replace(/ \d{4}$/, '')}{t.overdue ? ' · en retard' : ''}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-foreground">{company.name}</span>
+                          <span className="text-xs text-muted-foreground">{t.label}</span>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                }
                 const job = jobs.find((j) => j.id === t.jobId)
                 if (!job) return null
                 return (

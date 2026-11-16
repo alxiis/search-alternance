@@ -1,5 +1,5 @@
 import { DEFAULT_CLAUDE_URL } from '../data/constants'
-import type { Application, AppSettings, ClaudeAnalysis, Company, JobOffer, Profile, SearchCriteria } from '../types'
+import type { Application, AppSettings, ClaudeAnalysis, Company, Contact, JobOffer, Profile, SearchCriteria } from '../types'
 import { nowIso, today } from '../utils/dates'
 import { uid } from '../utils/id'
 
@@ -11,6 +11,7 @@ export function emptyProfile(): Profile {
     studyLevel: '',
     city: '',
     mobilityRadiusKm: 30,
+    school: '',
     mainSearch: '',
     contractType: 'Alternance',
     availability: '',
@@ -74,10 +75,20 @@ export function emptyCompany(name: string): Company {
     sources: [],
     usefulUrls: [],
     notes: '',
+    siren: '',
+    size: '',
+    contacts: [],
+    prospectStatus: 'none',
+    contactedAt: null,
+    followUpDate: null,
     lastSearchAt: null,
     createdAt: now,
     updatedAt: now,
   }
+}
+
+export function emptyContact(name = ''): Contact {
+  return { id: uid(), name, role: '', email: '', phone: '', linkedin: '', source: '', notes: '', history: [], createdAt: nowIso() }
 }
 
 export function emptyApplication(): Application {
@@ -129,6 +140,7 @@ export function emptyJob(url = ''): JobOffer {
     rhythm: '',
     studyLevel: '',
     matchReasons: [],
+    expiresAt: null,
     verifiedAt: null,
     availability: '',
     discoveredAt: today(),
@@ -163,5 +175,9 @@ export function hydrateCriteria(c: SearchCriteria): SearchCriteria {
 }
 
 export function hydrateCompany(c: Company): Company {
-  return { ...emptyCompany(c.name ?? ''), ...c }
+  return {
+    ...emptyCompany(c.name ?? ''),
+    ...c,
+    contacts: (c.contacts ?? []).map((contact) => ({ ...emptyContact(), ...contact, history: contact.history ?? [] })),
+  }
 }

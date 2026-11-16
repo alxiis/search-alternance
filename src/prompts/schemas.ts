@@ -25,6 +25,7 @@ const JOB_LINES = [
   `"rhythm": "Rythme d'alternance annoncé, sinon vide"`,
   `"studyLevel": "Niveau d'études préparé ou demandé (ex. Bac+3), sinon vide"`,
   `"source": "Site où l'offre a été vue"`,
+  `"expiresAt": "Date limite de candidature annoncée (YYYY-MM-DD), sinon null"`,
   `"verifiedAt": "YYYY-MM-DD (jour où tu as ouvert la page)"`,
   `"availability": "open | expired | doubtful"`,
 ]
@@ -88,6 +89,29 @@ export const ANALYSIS_SCHEMA = obj([
   `"analysis": ${obj(ANALYSIS_LINES)}`,
   `"coverLetters": { "full": "Lettre de motivation complète" }`,
   `"jobs": ${arrayOf(obj([`"companyName": "Nom de l'entreprise"`, ...JOB_LINES, ...MATCH_LINES]))}`,
+])
+
+const CONTACT_LINES = [
+  `"name": "Prénom Nom"`,
+  `"role": "Fonction exacte dans l'entreprise"`,
+  `"email": "Adresse professionnelle publiée, sinon vide"`,
+  `"phone": "Téléphone professionnel publié, sinon vide"`,
+  `"linkedin": "URL du profil LinkedIn public, sinon vide"`,
+  `"source": "URL de la page où tu as trouvé cette personne"`,
+  `"notes": "Pourquoi la contacter, et par quel canal"`,
+]
+
+/** Recherche d'interlocuteurs : les contacts sont rattachés à l'entreprise sous la clé "company". */
+export const CONTACTS_SCHEMA = obj([
+  `"schemaVersion": 1`,
+  `"company": ${obj([
+    `"name": "Nom officiel"`,
+    `"website": "https://site-officiel"`,
+    `"careersUrl": "URL de la page recrutement, sinon vide"`,
+    `"notes": "Canal de candidature spontanée recommandé (formulaire, adresse générique de recrutement), sinon vide"`,
+    `"sources": ["URL des sources consultées"]`,
+    `"contacts": ${arrayOf(obj(CONTACT_LINES))}`,
+  ])}`,
 ])
 
 export function coverLetterSchema(keys: string[]): string {

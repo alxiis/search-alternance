@@ -1,5 +1,6 @@
 import { TONE_BADGE, type Tone } from '../data/tones'
 import type { JobAvailability } from '../types'
+import { effectiveAvailability } from '../utils/availability'
 import { formatDate } from '../utils/dates'
 import { cn } from '../utils/text'
 
@@ -49,11 +50,14 @@ export const AVAILABILITY_LABEL: Record<JobAvailability, string> = {
 }
 
 /** État de l'annonce d'après la dernière vérification. Par défaut, seuls les états problématiques sont affichés. */
-export function AvailabilityBadge({ availability, verifiedAt, showOpen = false, className }: { availability: JobAvailability; verifiedAt?: string | null; showOpen?: boolean; className?: string }) {
-  if (!availability || (availability === 'open' && !showOpen)) return null
-  const meta = AVAILABILITY_META[availability]
+export function AvailabilityBadge({ availability, verifiedAt, expiresAt = null, showOpen = false, className }: { availability: JobAvailability; verifiedAt?: string | null; expiresAt?: string | null; showOpen?: boolean; className?: string }) {
+  const state = effectiveAvailability({ availability, expiresAt })
+  if (!state || (state === 'open' && !showOpen)) return null
+  const meta = AVAILABILITY_META[state]
+  // Expirée sans vérification : c'est la date limite de l'annonce qui est dépassée.
+  const title = state !== availability && expiresAt ? `Date limite dépassée le ${formatDate(expiresAt)}` : verifiedAt ? `Vérifiée le ${formatDate(verifiedAt)}` : undefined
   return (
-    <span className={cn('inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium', TONE_BADGE[meta.tone], className)} title={verifiedAt ? `Vérifiée le ${formatDate(verifiedAt)}` : undefined}>
+    <span className={cn('inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium', TONE_BADGE[meta.tone], className)} title={title}>
       {meta.label}
     </span>
   )

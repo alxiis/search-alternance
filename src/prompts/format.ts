@@ -1,5 +1,5 @@
-import { CLOSED_STATUSES, REMOTE_LABELS } from '../data/constants'
-import type { Company, JobOffer, Profile, SearchCriteria } from '../types'
+import { CHANNEL_LABELS, CLOSED_STATUSES, REMOTE_LABELS } from '../data/constants'
+import type { Company, Contact, JobOffer, Profile, SearchCriteria } from '../types'
 import { formatDate, today } from '../utils/dates'
 
 function line(label: string, value: string | number | null | undefined): string {
@@ -33,6 +33,7 @@ export function profileToText(p: Profile, { includeLetter = false }: { includeLe
   const text = block(
     line('Nom', `${p.firstName} ${p.lastName}`),
     line('Formation', p.education),
+    line('École', p.school),
     line("Niveau d'études", p.studyLevel),
     line('Ville', p.city),
     line('Rayon de mobilité', p.mobilityRadiusKm ? `${p.mobilityRadiusKm} km` : ''),
@@ -143,12 +144,30 @@ export function companyToText(c: Company | undefined, fallbackName = ''): string
     line('Nom', c.name),
     line('Secteur', c.sector),
     line('Localisation', c.location),
+    line('Effectif', c.size),
     line('Site officiel', c.website),
     line('Page recrutement', c.careersUrl),
     line('Description', c.description),
     line('Sources connues', list(c.sources)),
     line('Notes', c.notes),
   )
+}
+
+export function contactToText(c: Contact): string {
+  const history = [...c.history]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((e) => `  - ${formatDate(e.date)} (${CHANNEL_LABELS[e.channel]})${e.note ? ` : ${e.note}` : ''}`)
+  return block(
+    line('Nom', c.name),
+    line('Fonction', c.role),
+    line('Mes notes', c.notes),
+    history.length ? `- Échanges précédents :\n${history.join('\n')}` : '',
+  )
+}
+
+/** Contacts déjà connus dans une entreprise, pour ne pas les faire rechercher à nouveau. */
+export function knownContactsText(contacts: Contact[]): string {
+  return contacts.map((c) => `- ${c.name}${c.role ? ` (${c.role})` : ''}`).join('\n')
 }
 
 export function jobToText(j: JobOffer, company: Company | undefined): string {
@@ -165,6 +184,7 @@ export function jobToText(j: JobOffer, company: Company | undefined): string {
     line("Niveau d'études demandé", j.studyLevel),
     line('Rémunération', j.salary),
     line('Date de publication', j.publishedAt ? formatDate(j.publishedAt) : ''),
+    line("Date limite de l'annonce", j.expiresAt ? formatDate(j.expiresAt) : ''),
     line('Source', j.source),
     line('Dernière vérification', j.verifiedAt ? formatDate(j.verifiedAt) : ''),
     line('Description', j.description),

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { useStore } from './hooks/useStore'
 import { UiProvider } from './hooks/useUi'
+import { CapturePage } from './pages/CapturePage'
 import { CompaniesPage } from './pages/CompaniesPage'
 import { CompanyDetailPage } from './pages/CompanyDetailPage'
 import { CriteriaPage } from './pages/CriteriaPage'
@@ -11,6 +12,7 @@ import { DataPage } from './pages/DataPage'
 import { JobsPage } from './pages/JobsPage'
 import { KanbanPage } from './pages/KanbanPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { ProspectionPage } from './pages/ProspectionPage'
 import { SearchPage } from './pages/SearchPage'
 
 export default function App() {
@@ -38,6 +40,8 @@ export default function App() {
           <Route path="profil" element={<ProfilePage />} />
           <Route path="criteres" element={<CriteriaPage />} />
           <Route path="recherche" element={<SearchPage />} />
+          <Route path="prospection" element={<ProspectionPage />} />
+          <Route path="capture" element={<CapturePage />} />
           <Route path="offres" element={<JobsPage />} />
           <Route path="kanban" element={<KanbanPage />} />
           <Route path="entreprises" element={<CompaniesPage />} />

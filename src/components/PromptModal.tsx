@@ -14,9 +14,9 @@ export function PromptModal({ result, onClose, onImport }: Props) {
       <ol className="mb-4 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
         <li>Copiez le prompt puis ouvrez Claude.</li>
         <li>Collez-le dans une conversation où la recherche web est activée, et laissez Claude faire ses recherches.</li>
-        <li>Copiez toute sa réponse (ou seulement le bloc JSON final) et revenez cliquer sur « Importer le résultat ».</li>
+        <li>{result.noImport ? 'Copiez le texte obtenu : il est prêt à être envoyé.' : 'Copiez toute sa réponse (ou seulement le bloc JSON final) et revenez cliquer sur « Importer le résultat ».'}</li>
       </ol>
-      <PromptPanel text={result.text} onImport={onImport} />
+      <PromptPanel text={result.text} onImport={result.noImport ? undefined : onImport} />
     </Modal>
   )
 }

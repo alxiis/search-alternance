@@ -6,6 +6,7 @@ import { LetterModal } from '../components/LetterModal'
 import { PromptModal } from '../components/PromptModal'
 import { buildAnalyzeJobPrompt } from '../prompts/analyzeJob'
 import { buildFindCompanyJobsPrompt } from '../prompts/findCompanyJobs'
+import { buildFindContactsPrompt } from '../prompts/findContacts'
 import { buildVerifyJobPrompt } from '../prompts/verifyJob'
 import type { PromptResult } from '../types'
 import { useStore } from './useStore'
@@ -13,12 +14,14 @@ import { useStore } from './useStore'
 interface UiApi {
   openJob: (id: string) => void
   openAddJob: (url?: string) => void
-  openImport: (targetJobId?: string) => void
+  openImport: (targetJobId?: string, targetCompanyId?: string) => void
   showPrompt: (result: PromptResult) => void
   analyzeJob: (jobId: string) => void
   verifyJob: (jobId: string) => void
   writeLetter: (jobId: string) => void
   searchCompanyJobs: (companyId: string) => void
+  /** Prompt de recherche d'interlocuteurs dans une entreprise. */
+  findContacts: (companyId: string) => void
 }
 
 const UiContext = createContext<UiApi | null>(null)
@@ -27,7 +30,7 @@ export function UiProvider({ children }: { children: ReactNode }) {
   const { data, markCompanySearched } = useStore()
   const [jobId, setJobId] = useState<string | null>(null)
   const [addJob, setAddJob] = useState<{ url: string } | null>(null)
-  const [importTarget, setImportTarget] = useState<{ jobId?: string } | null>(null)
+  const [importTarget, setImportTarget] = useState<{ jobId?: string; companyId?: string } | null>(null)
   const [prompt, setPrompt] = useState<PromptResult | null>(null)
   const [letterJobId, setLetterJobId] = useState<string | null>(null)
   const [pendingAnalyze, setPendingAnalyze] = useState<string | null>(null)
@@ -37,7 +40,7 @@ export function UiProvider({ children }: { children: ReactNode }) {
     return {
       openJob: setJobId,
       openAddJob: (url = '') => setAddJob({ url }),
-      openImport: (targetJobId) => setImportTarget({ jobId: targetJobId }),
+      openImport: (targetJobId, targetCompanyId) => setImportTarget({ jobId: targetJobId, companyId: targetCompanyId }),
       showPrompt: setPrompt,
       analyzeJob(id) {
         const job = data.jobs.find((j) => j.id === id)
@@ -72,6 +75,16 @@ export function UiProvider({ children }: { children: ReactNode }) {
           companyId,
         })
         void markCompanySearched(companyId).catch(() => undefined)
+      },
+      findContacts(companyId) {
+        const company = data.companies.find((c) => c.id === companyId)
+        if (!company) return
+        setPrompt({
+          kind: 'findContacts',
+          title: `Interlocuteurs — ${company.name}`,
+          text: buildFindContactsPrompt(company, data.profile, activeCriteria()),
+          companyId,
+        })
       },
     }
   }, [data, markCompanySearched])
@@ -112,8 +125,8 @@ export function UiProvider({ children }: { children: ReactNode }) {
         />
       )}
       {letterJobId && <LetterModal jobId={letterJobId} onClose={() => setLetterJobId(null)} onImport={() => setImportTarget({ jobId: letterJobId })} />}
-      {prompt && <PromptModal result={prompt} onClose={() => setPrompt(null)} onImport={() => setImportTarget({ jobId: prompt.jobId })} />}
-      {importTarget && <ImportJsonModal targetJobId={importTarget.jobId} onClose={() => setImportTarget(null)} />}
+      {prompt && <PromptModal result={prompt} onClose={() => setPrompt(null)} onImport={() => setImportTarget({ jobId: prompt.jobId, companyId: prompt.companyId })} />}
+      {importTarget && <ImportJsonModal targetJobId={importTarget.jobId} targetCompanyId={importTarget.companyId} onClose={() => setImportTarget(null)} />}
     </UiContext.Provider>
   )
 }
